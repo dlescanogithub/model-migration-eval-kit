@@ -43,6 +43,33 @@ def test_named_profiles_decide_as_designed() -> None:
     assert degraded.metrics.harmful_new > 0
 
 
+def test_seed_repeats_do_not_change_ticket_inference() -> None:
+    one = _bundle("fake-new", runs=1)
+    ten = _bundle("fake-new", runs=10)
+    assert one.metrics.analysis_n == 63
+    assert ten.metrics.analysis_n == 63
+    assert one.metrics.mcnemar_new_worse == 8
+    assert one.metrics.mcnemar_new_better == 0
+    assert one.metrics.mcnemar_p_regression == ten.metrics.mcnemar_p_regression
+    assert one.metrics.mcnemar_new_worse == ten.metrics.mcnemar_new_worse
+    assert one.metrics.mcnemar_new_better == ten.metrics.mcnemar_new_better
+    assert one.metrics.bootstrap_low == ten.metrics.bootstrap_low
+    assert one.metrics.bootstrap_high == ten.metrics.bootstrap_high
+    assert one.metrics.harmful_new == ten.metrics.harmful_new
+    for left, right in zip(one.metrics.slices, ten.metrics.slices, strict=True):
+        assert left.n == right.n
+        assert left.n > 0
+        assert left.old_pass_rate == right.old_pass_rate
+        assert left.new_pass_rate == right.new_pass_rate
+        assert left.bootstrap_low == right.bootstrap_low
+        assert left.bootstrap_high == right.bootstrap_high
+    degraded = _bundle("fake-new-degraded", runs=10)
+    once = _bundle("fake-new-degraded", runs=1)
+    assert degraded.metrics.harmful_new == once.metrics.harmful_new
+    assert degraded.metrics.mcnemar_p_regression == once.metrics.mcnemar_p_regression
+    assert degraded.metrics.analysis_n == 63
+
+
 def test_reference_provider_passes_the_eval_gate() -> None:
     root = repo_root()
     summary = evaluate_provider(

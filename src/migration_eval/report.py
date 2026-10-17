@@ -23,7 +23,9 @@ def report_to_dict(report: CompareReport) -> dict[str, object]:
         "latency_note": report.latency_note,
         "metrics": _metrics_dict(report.metrics),
         "disagreements": list(report.disagreements),
-        "plain_stats": _plain_stats(),
+        "plain_stats": _plain_stats(report.metrics.analysis_n),
+        "label_note": _label_note(),
+        "gate_note": _fake_gate_note(report),
     }
 
 
@@ -34,14 +36,18 @@ def render_markdown(report: CompareReport) -> str:
         "",
         f"- Decision: **{report.decision.status}**",
         f"- Injected today: {report.today}",
-        f"- Tickets: {report.tickets}",
-        f"- Repeated runs (seeds 0..{report.runs - 1}): {report.runs}",
+        f"- Tickets (unit of analysis, n): {report.metrics.analysis_n}",
+        f"- Seed repeats collapsed per ticket: {report.runs}",
         f"- Latency: {report.latency_note}",
         f"- Prices: {report.price_note}",
         "",
         "This report scores invariants (schema, allowed category, priority rule, "
         "queue allowed for the category, injection resisted, no contact-token echo, "
         "allowed tool only). It does not require a fixed sentence or a fixed tool trajectory.",
+        "",
+        _label_note(),
+        "",
+        _fake_gate_note(report),
         "",
         "## Reasons",
         "",
@@ -56,27 +62,34 @@ def render_markdown(report: CompareReport) -> str:
             "",
             "## Quality by slice",
             "",
-            "| Slice | Old pass rate | New pass rate | Drop (points) |",
-            "| --- | ---: | ---: | ---: |",
+            "Pass rates count tickets. A ticket passes only when every seed repeat passed. "
+            "The interval is a bootstrap of (new pass rate - old pass rate) over those tickets.",
+            "",
+            "| Slice | n | Old pass rate | New pass rate | Drop (points) | Bootstrap 95% (new - old) |",
+            "| --- | ---: | ---: | ---: | ---: | --- |",
         ]
     )
     for sl in report.metrics.slices:
-        lines.append(f"| {sl.name} | {sl.old_pass_rate:.4f} | {sl.new_pass_rate:.4f} | {sl.drop_points:.2f} |")
+        lines.append(
+            f"| {sl.name} | {sl.n} | {sl.old_pass_rate:.4f} | {sl.new_pass_rate:.4f} | "
+            f"{sl.drop_points:.2f} | [{sl.bootstrap_low:.4f}, {sl.bootstrap_high:.4f}] |"
+        )
     lines.append(
-        f"| overall | {metrics.overall.old_pass_rate:.4f} | {metrics.overall.new_pass_rate:.4f} | "
-        f"{metrics.overall.drop_points:.2f} |"
+        f"| overall | {metrics.overall.n} | {metrics.overall.old_pass_rate:.4f} | "
+        f"{metrics.overall.new_pass_rate:.4f} | {metrics.overall.drop_points:.2f} | "
+        f"[{metrics.bootstrap_low:.4f}, {metrics.bootstrap_high:.4f}] |"
     )
     lines.extend(
         [
             "",
             "## Behaviour diff by category",
             "",
-            "| Category | Old pass rate | New pass rate | Drop (points) |",
-            "| --- | ---: | ---: | ---: |",
+            "| Category | n | Old pass rate | New pass rate | Drop (points) |",
+            "| --- | ---: | ---: | ---: | ---: |",
         ]
     )
     for sl in metrics.categories:
-        lines.append(f"| {sl.name} | {sl.old_pass_rate:.4f} | {sl.new_pass_rate:.4f} | {sl.drop_points:.2f} |")
+        lines.append(f"| {sl.name} | {sl.n} | {sl.old_pass_rate:.4f} | {sl.new_pass_rate:.4f} | {sl.drop_points:.2f} |")
     lines.extend(
         [
             "",
@@ -99,17 +112,20 @@ def render_markdown(report: CompareReport) -> str:
                 f"{metrics.format_failure_rate_new:.4f} |"
             ),
             (f"| Tool-call failure rate | {metrics.tool_failure_rate_old:.4f} | {metrics.tool_failure_rate_new:.4f} |"),
-            (f"| Harmful effects (count across runs) | {metrics.harmful_old} | {metrics.harmful_new} |"),
+            (f"| Harmful tickets | {metrics.harmful_old} | {metrics.harmful_new} |"),
             "",
             "## Paired test",
             "",
-            _plain_stats(),
+            _plain_stats(metrics.analysis_n),
             "",
-            f"- Pairs where the old model passed and the new failed: {metrics.mcnemar_new_worse}",
-            f"- Pairs where the new model passed and the old failed: {metrics.mcnemar_new_better}",
-            f"- One-sided p-value: {metrics.mcnemar_p_regression:.6g}",
+            f"- Tickets where the old side passed and the new side failed: {metrics.mcnemar_new_worse}",
+            f"- Tickets where the new side passed and the old side failed: {metrics.mcnemar_new_better}",
             (
-                "- Bootstrap 95% interval for (new pass rate - old pass rate), "
+                f"- Exact one-sided McNemar p-value on those n={metrics.analysis_n} tickets: "
+                f"{metrics.mcnemar_p_regression:.6g}"
+            ),
+            (
+                "- Bootstrap 95% interval for the decision metric (new pass rate - old pass rate), "
                 f"resampling tickets: [{metrics.bootstrap_low:.4f}, {metrics.bootstrap_high:.4f}]"
             ),
             "",
@@ -162,6 +178,7 @@ def _metrics_dict(metrics: Metrics) -> dict[str, object]:
         "cost_per_run_old": metrics.cost_per_run_old,
         "cost_per_run_new": metrics.cost_per_run_new,
         "savings_ratio": metrics.savings_ratio,
+        "analysis_n": metrics.analysis_n,
         "mcnemar_new_worse": metrics.mcnemar_new_worse,
         "mcnemar_new_better": metrics.mcnemar_new_better,
         "mcnemar_p_regression": metrics.mcnemar_p_regression,
@@ -176,17 +193,40 @@ def _slice_dict(item: SliceDelta) -> dict[str, object]:
         "old_pass_rate": item.old_pass_rate,
         "new_pass_rate": item.new_pass_rate,
         "drop_points": item.drop_points,
+        "n": item.n,
+        "bootstrap_low": item.bootstrap_low,
+        "bootstrap_high": item.bootstrap_high,
     }
 
 
-def _plain_stats() -> str:
+def _plain_stats(n: int) -> str:
     return (
-        "Each ticket is graded on both models, once per seed. Pairs where both pass or "
-        "both fail do not pick a winner. On the pairs that disagree, a model that is no "
-        "worse should win about half the time. The p-value is the chance of seeing this "
-        "many (or more) disagreements where only the new model fails, if that split were "
-        "a fair coin. The bootstrap redraws tickets with replacement and reports a middle "
-        "95% range for the pass-rate gap (new minus old)."
+        f"The unit of analysis is the ticket (n={n}). Seed repeats are collapsed first: "
+        "a ticket passes only when every repeat passed. Extra repeats are not extra pairs. "
+        "Tickets where both sides pass or both sides fail do not pick a winner. On the "
+        "tickets that disagree, the exact McNemar p-value is the chance of at least this "
+        "many 'new side only' failures if each disagreement were a fair coin. The bootstrap "
+        "redraws tickets, not repeats, and reports a middle 95% range for the pass-rate gap."
+    )
+
+
+def _label_note() -> str:
+    return (
+        "Expected labels and the scripted providers are written from the same spec. "
+        "These numbers show that the comparison machinery runs. They are not a measure of model quality."
+    )
+
+
+def _fake_gate_note(report: CompareReport) -> str:
+    scripted = report.old_name.startswith("fake-") and report.new_name.startswith("fake-")
+    if scripted:
+        return (
+            "Both sides are scripted fakes. A NO_GO on this pair is built into the fake provider "
+            "by design. It demonstrates that the gate fires. It is not a difference between two real models."
+        )
+    return (
+        "This run is not a scripted fake-versus-fake demo. Read the price note and the latency note "
+        "before treating a cost or a latency figure as measured."
     )
 
 

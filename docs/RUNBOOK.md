@@ -43,7 +43,7 @@ There is no dashboard. Watch:
 | compare says NO_GO | Keep the old provider. Do not start a canary plan from that report |
 | canary says ROLLBACK | The synthetic cohort missed the bar. Do not describe this as a live rollback; there was nothing live to roll back |
 | secretscan fails | Remove the secret, rotate it if it was real, and do not push it |
-| Someone set MIGRATION_EVAL_ENABLE_LIVE=1 | Turn it off. Confirm CI does not have the variable. Treat any ticket text that was sent as exposed |
+| Someone set LIVE_MODE=1 | Turn it off. Confirm CI does not have the variable. Treat any ticket text that was sent as exposed. Cassettes under `var/` may contain ticket text; that directory is gitignored |
 
 ## Ownership
 

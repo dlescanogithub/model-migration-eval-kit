@@ -9,7 +9,7 @@ The question is whether a new model may replace an old one for ticket triage. A 
 
 ## Decision
 
-Default providers are local fakes or cassettes. The live adapter is off unless `MIGRATION_EVAL_ENABLE_LIVE=1`. CI does not set that variable. A GO recommendation is written into a draft ADR. Nothing in the process routes a ticket.
+Default providers are local fakes or cassettes. The chat-completions adapter is off unless `LIVE_MODE=1`. CI does not set that variable. A GO recommendation is written into a draft ADR. Nothing in the process routes a ticket.
 
 ## Consequences
 

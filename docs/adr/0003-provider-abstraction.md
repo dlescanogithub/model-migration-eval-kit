@@ -9,7 +9,7 @@ The comparison should not import a vendor SDK. Tests must not open network conne
 
 ## Decision
 
-`Provider.complete` is the only method the grader uses. Built-in names are the fake profiles, `cassette`, and `openai-compat`. Cassette replay raises `CassetteMiss` when the key is absent. Recording is explicit. The live adapter is a separate class that refuses to construct when the flag is off, and it retries with a max attempt count and a backoff cap.
+`Provider.complete` is the only method the grader uses. Built-in names are the fake profiles, `cassette`, and `openai-compat` (a chat-completions HTTP adapter). Cassette replay raises `CassetteMiss` when the key is absent. Recording is explicit. The live adapter refuses to run when `LIVE_MODE` is off, refuses before any request when config is missing, and retries with a max attempt count and a backoff cap. `compare-live` records both sides under `var/cassettes/`.
 
 ## Consequences
 

@@ -10,8 +10,11 @@
 
 Casa Brisa (fictional shop) is deciding whether the new model may replace the old
 one for ticket triage. The numbers below come from the synthetic golden set in this
-repo. No production traffic was read. Prices are whatever the price table says
+repo. Expected labels and the scripted providers share one spec, so a fake-versus-fake
+result shows that the gate runs. It is not a measure of model quality. No production
+traffic was read. Prices are whatever the price table says
 ([EST] illustrative simulated prices invented for the Casa Brisa exercise. Not a vendor quote.). Latency is simulated.
+The unit of analysis is the ticket (n=63). Seed repeats are collapsed.
 
 ## Evidence
 
@@ -19,14 +22,14 @@ repo. No production traffic was read. Prices are whatever the price table says
 - Cost per run USD: 0.069515 -> 0.014914
 - Savings ratio: 0.7855
 - p95 latency ms (simulated): 459.0 -> 209.0
-- Harmful effects across runs: 0 -> 0
+- Harmful tickets: 0 -> 0
 
 ## Recommendation
 
 NO_GO
 
-- slice edge dropped more than the cap (edge drop 33.33 points (cap 5.00))
-- paired test shows a regression (McNemar one-sided p=8.27181e-25 (new worse 80, new better 0, alpha 0.05))
+- slice edge dropped more than the cap (edge drop 33.33 points on n=21 tickets (cap 5.00))
+- paired test shows a regression (ticket-level exact McNemar n=63 one-sided p=0.00390625 (tickets new-worse 8, new-better 0, alpha 0.05; seed repeats are collapsed and are not pairs))
 
 ## Consequences
 

@@ -1,18 +1,21 @@
 # Provenance
 
-The task brief asked for a documented copy of the eval kit in the private repository `dlescanogithub/agent-runtime-evals`, branch `cursor/agent-runtime-evals-mvp-7e58`, commit `55cfd4183fb2489d77fc9c8552e008274dc78f77`, in particular `src/agent_runtime/evalkit/`, the cassette provider, the fake-provider pattern, JSONL traces, JSON logging, and the secret scan.
+Some small utilities are shared across the portfolio repositories and kept aligned on purpose. They are vendored in this tree. They are not imported from an installed package.
 
-On 2026-10-17 the GitHub credential available to this environment returned 404 for that repository (`gh repo view` and `git clone` of the same URL). No file from that tree was read, and none was copied.
-
-What this repo implements instead, from the contract described in the brief:
-
-| Idea | Where it lives here |
+| Utility | In this repo |
 | --- | --- |
-| Invariant runner surface | `src/migration_eval/evalkit/` re-exports `check_completion` and the JSONL trace helpers |
-| Cassette record/replay, no network fallback | `src/migration_eval/providers/cassette.py` |
-| Fake provider | `src/migration_eval/providers/fake.py` |
-| JSONL trace | `src/migration_eval/trace.py` |
-| JSON logging | `src/migration_eval/logging_setup.py` |
-| Secret scan | `src/migration_eval/secretscan.py` |
+| Cassette replay, with no network fallback on a miss | `src/migration_eval/providers/cassette.py` |
+| Invariant checks | `src/migration_eval/invariants.py`, re-exported from `src/migration_eval/evalkit/` |
+| JSON trace | `src/migration_eval/trace.py` |
+| Structured logging | `src/migration_eval/logging_setup.py` |
+| Secret scanner | `src/migration_eval/secretscan.py` |
 
-If the reference tree becomes readable later, a follow-up can diff these modules against that commit and record any real copy in this file. Until then, treat this code as original to this repository.
+`secretscan.py` is the shared scanner. The pattern list and the test cases stay the same from repo to repo. Its digest is:
+
+secretscan.py sha256: db07c964e117ebd0458b9a0a2552481dc9f665680b017d3b83c667b8171d0a9b
+
+`python -m migration_eval secretscan --check-hash` recomputes that digest and compares it with this line. `make secretscan-hash` runs the same check.
+
+What was written for this repository: the Casa Brisa ticket fixtures, the scripted fake profiles, the comparison and the policy, the canary simulator, the deprecation calendar, and the optional chat-completions HTTP adapter. That adapter stays off unless `LIVE_MODE=1`.
+
+Nothing here is copied from employer or client work.

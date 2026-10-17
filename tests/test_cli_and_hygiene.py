@@ -5,6 +5,8 @@ import logging
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from migration_eval.cli import main
 from migration_eval.golden import build_golden, dump_golden
 from migration_eval.logging_setup import JsonFormatter, configure_logging
@@ -122,7 +124,7 @@ def test_cli_eval_passes_and_regression_exits_red(tmp_path: Path) -> None:
     assert report["decision"] == "NO_GO"
 
 
-def test_cli_compare_canary_calendar_and_scan(tmp_path: Path) -> None:
+def test_cli_compare_canary_calendar_and_scan(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     out = tmp_path / "compare"
     code = main(
         [
@@ -168,6 +170,8 @@ def test_cli_compare_canary_calendar_and_scan(tmp_path: Path) -> None:
     assert main(["--log-level", "ERROR", "deprecation-check", "--today", "2026-10-17"]) == 0
     assert main(["--log-level", "ERROR", "deprecation-check", "--today", "2026-10-25"]) == 1
     assert main(["secretscan", str(tmp_path)]) == 0
+    monkeypatch.delenv("LIVE_MODE", raising=False)
+    assert main(["--log-level", "ERROR", "compare-live", "--runs", "1", "--today", "2026-10-17"]) == 2
 
 
 def test_golden_file_matches_generator() -> None:

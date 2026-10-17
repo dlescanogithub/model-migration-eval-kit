@@ -1,9 +1,7 @@
-"""Invariant-check surface, reimplemented to the contract named in the brief.
+"""Invariant-check surface shared with the other portfolio repos.
 
-See docs/PROVENANCE.md. The private reference tree was not readable from this
-environment, so this package is a fresh implementation of the same ideas:
-invariant checks rather than exact trajectories, JSONL traces, and an offline
-runner. It is not a byte copy.
+See docs/PROVENANCE.md. This package re-exports invariant checks and JSONL
+trace helpers. Scoring looks at effects, not an exact tool-call trajectory.
 """
 
 from migration_eval.invariants import CheckResult, check_completion

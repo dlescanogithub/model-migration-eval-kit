@@ -10,7 +10,7 @@ El papelito es el texto del ticket. El cliente puede escribir cualquier cosa. El
 
 ## Qué está medido acá
 
-Los dos "hornos" de la demo son simuladores con nombre: `fake-old` y `fake-new`. No son modelos de un proveedor. El resultado medido el 2026-10-17, con `python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17`, es NO_GO: la tanda difícil (slice edge) baja 33.33 puntos y el tope configurado es 5. Los precios de esa cuenta son ilustrativos, marcados [EST]. La latencia dice "simulated".
+Los dos "hornos" de la demo son simuladores con nombre: `fake-old` y `fake-new`. No son modelos de un proveedor. El resultado medido el 2026-10-17, paquete 0.1.1, con `python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17`, es NO_GO: la tanda difícil (slice edge, n=21) baja 33.33 puntos y el tope configurado es 5. Ese NO_GO está escrito en `fake-new` a propósito, para mostrar que la compuerta dispara. No es una diferencia entre dos modelos reales. Las etiquetas salen del mismo spec que los fakes (`spec.py`): los números muestran que la maquinaria corre, no la calidad de un modelo. Los precios de esa cuenta son ilustrativos, marcados [EST]. La latencia dice "simulated".
 
 ## Paso a paso
 
@@ -18,9 +18,9 @@ Los dos "hornos" de la demo son simuladores con nombre: `fake-old` y `fake-new`.
 2. Cada ticket tiene una etiqueta que sale de reglas (`src/migration_eval/spec.py`): categoría, prioridad, cola. El texto del ticket ilustra el caso. La regla no "lee" el texto con un modelo.
 3. Un proveedor devuelve JSON: categoría, prioridad, cola, una frase corta y una herramienta. La única herramienta permitida es `route_ticket`. Nadie la ejecuta.
 4. Los invariantes miran el efecto, no la frase exacta. ¿El JSON cierra? ¿La categoría está en la lista? ¿La prioridad cumple la regla? ¿La cola es la de esa categoría? ¿El texto incrustado fue ignorado? ¿No se repitió el correo sintético? ¿No apareció otra herramienta?
-5. `compare` corre la misma lista en los dos proveedores, varias veces, con semillas 0, 1, 2... En estos fakes la calidad no cambia con la semilla. Cambia la latencia simulada. El test igual cuenta los pares.
-6. El test pareado (McNemar) mira solo los tickets donde los dos no coinciden. Si el nuevo no fuera peor, esas diferencias se repartirían más o menos mitad y mitad. Si casi todas son "el viejo pasó y el nuevo no", el p-valor es chico.
-7. El bootstrap vuelve a sortear tickets y muestra un rango para la diferencia de tasa. En la corrida medida, ese rango queda debajo de cero: [-0.2222, -0.0476].
+5. `compare` corre la misma lista en los dos proveedores, con semillas. En estos fakes la semilla solo mueve la latencia simulada. Antes del test se junta cada ticket: pasa solo si pasó en todas las repeticiones. La unidad es el ticket. n es 63, no 63 por la cantidad de semillas. Repetir la corrida no cambia el test ni el intervalo.
+6. El test pareado (McNemar exacto) mira los tickets donde uno pasó y el otro no. En la corrida medida son 8 contra 0, sobre n=63. Ese resultado está armado en el fake. Sirve para ver la compuerta, no para decir que un modelo real es peor.
+7. El bootstrap vuelve a sortear tickets (no repeticiones) y muestra un rango para la diferencia de tasa, por slice y para la métrica de decisión. En la corrida medida, el rango general queda debajo de cero: [-0.2222, -0.0476]. El de edge es [-0.5238, -0.1429].
 8. La política (`config/policy.yaml`) junta eso y dice GO, NO_GO o NEED_HUMAN. NO_GO corta. NEED_HUMAN es cuando no hay un fallo duro pero tampoco hay motivo para moverse (por ejemplo, misma calidad y ahorro cero). GO es una recomendación. Una persona tiene que firmar.
 9. El canario sintético manda una parte estratificada de la tanda al proveedor nuevo y escribe un JSONL. Si la tasa de fallo se pasa del umbral, la decisión es ROLLBACK. No hay un router de verdad.
 10. El calendario de baja compara fechas con un "hoy" que vos inyectás. Sirve para avisar que se acerca una fecha, no para apagar un servicio.

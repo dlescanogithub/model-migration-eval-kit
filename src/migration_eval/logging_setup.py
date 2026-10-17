@@ -22,7 +22,7 @@ class JsonFormatter(logging.Formatter):
         extra = getattr(record, "extra_fields", None)
         if isinstance(extra, dict):
             for key, value in extra.items():
-                if key in {"api_key", "authorization", "token"}:
+                if key in {"api_key", "authorization", "token", "llm_api_key"}:
                     continue
                 payload[str(key)] = value
         if record.exc_info:

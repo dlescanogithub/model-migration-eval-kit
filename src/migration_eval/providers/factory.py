@@ -7,7 +7,7 @@ from pathlib import Path
 from migration_eval.providers.base import Provider
 from migration_eval.providers.cassette import CassetteProvider
 from migration_eval.providers.fake import PROFILES, FakeProvider
-from migration_eval.providers.openai_compat import LiveDisabled, LiveProvider, live_enabled
+from migration_eval.providers.openai_compat import LiveDisabled, build_single_live_provider, live_enabled
 
 
 def build_provider(
@@ -32,15 +32,8 @@ def build_provider(
     if name == "openai-compat":
         if not live_enabled(env):
             raise LiveDisabled(
-                "openai-compat is off by default. Set MIGRATION_EVAL_ENABLE_LIVE=1 to opt in. Do not set it in CI."
+                "chat-completions provider is off by default. Set LIVE_MODE=1 to opt in. Do not set it in CI."
             )
-        return LiveProvider(
-            base_url=env.get("MIGRATION_EVAL_LIVE_BASE_URL", ""),
-            api_key=env.get("MIGRATION_EVAL_LIVE_API_KEY", ""),
-            model=env.get("MIGRATION_EVAL_LIVE_MODEL", ""),
-            enabled=True,
-            max_attempts=int(env.get("MIGRATION_EVAL_MAX_ATTEMPTS", "3")),
-            backoff_cap_s=float(env.get("MIGRATION_EVAL_BACKOFF_CAP_S", "0.2")),
-        )
+        return build_single_live_provider(env)
     known = ", ".join(sorted([*PROFILES, "cassette", "openai-compat"]))
     raise ValueError(f"unknown provider {name!r}; known: {known}")

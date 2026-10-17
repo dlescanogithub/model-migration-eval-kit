@@ -23,9 +23,14 @@ class Policy:
 
 @dataclass(frozen=True)
 class SliceDelta:
+    """Pass rates on tickets. n is the ticket count, after seed repeats are collapsed."""
+
     name: str
     old_pass_rate: float
     new_pass_rate: float
+    n: int = 0
+    bootstrap_low: float = 0.0
+    bootstrap_high: float = 0.0
 
     @property
     def drop_points(self) -> float:
@@ -54,6 +59,7 @@ class Metrics:
     mcnemar_p_regression: float
     bootstrap_low: float
     bootstrap_high: float
+    analysis_n: int = 0
 
     @property
     def savings_ratio(self) -> float:
@@ -99,7 +105,9 @@ def decide(metrics: Metrics, policy: Policy) -> Decision:
 
     for sl in metrics.slices:
         ok = sl.drop_points <= policy.max_slice_drop_points
-        detail = f"{sl.name} drop {sl.drop_points:.2f} points (cap {policy.max_slice_drop_points:.2f})"
+        detail = (
+            f"{sl.name} drop {sl.drop_points:.2f} points on n={sl.n} tickets (cap {policy.max_slice_drop_points:.2f})"
+        )
         gates.append((f"slice:{sl.name}", ok, detail))
         if not ok:
             hard.append(f"slice {sl.name} dropped more than the cap ({detail})")
@@ -119,16 +127,13 @@ def decide(metrics: Metrics, policy: Policy) -> Decision:
         hard.append(tool_detail)
 
     harm_ok = metrics.harmful_new <= metrics.harmful_old
-    harm_detail = f"harmful effects old={metrics.harmful_old} new={metrics.harmful_new}"
+    harm_detail = f"harmful tickets old={metrics.harmful_old} new={metrics.harmful_new}"
     gates.append(("no_new_harmful_effects", harm_ok, harm_detail))
     if not harm_ok:
         hard.append(f"new model added harmful effects ({harm_detail})")
 
     latency_ok = metrics.p95_latency_ms_new <= policy.max_p95_latency_ms
-    latency_detail = (
-        f"new p95 latency {metrics.p95_latency_ms_new:.1f} ms "
-        f"(budget {policy.max_p95_latency_ms:.1f} ms, simulated for fakes)"
-    )
+    latency_detail = f"new p95 latency {metrics.p95_latency_ms_new:.1f} ms (budget {policy.max_p95_latency_ms:.1f} ms)"
     gates.append(("p95_latency", latency_ok, latency_detail))
     if not latency_ok:
         hard.append(latency_detail)
@@ -137,19 +142,17 @@ def decide(metrics: Metrics, policy: Policy) -> Decision:
         metrics.mcnemar_p_regression < policy.alpha and metrics.mcnemar_new_worse > metrics.mcnemar_new_better
     )
     paired_detail = (
-        f"McNemar one-sided p={metrics.mcnemar_p_regression:.6g} "
-        f"(new worse {metrics.mcnemar_new_worse}, new better {metrics.mcnemar_new_better}, "
-        f"alpha {policy.alpha})"
+        f"ticket-level exact McNemar n={metrics.analysis_n} "
+        f"one-sided p={metrics.mcnemar_p_regression:.6g} "
+        f"(tickets new-worse {metrics.mcnemar_new_worse}, new-better {metrics.mcnemar_new_better}, "
+        f"alpha {policy.alpha}; seed repeats are collapsed and are not pairs)"
     )
     gates.append(("paired_regression", not paired_worse, paired_detail))
     if paired_worse:
         hard.append(f"paired test shows a regression ({paired_detail})")
 
     savings_ok = metrics.savings_ratio + 1e-12 >= policy.min_cost_savings_ratio
-    savings_detail = (
-        f"cost savings ratio {metrics.savings_ratio:.4f} "
-        f"(minimum {policy.min_cost_savings_ratio:.4f}); prices are [EST] for fakes"
-    )
+    savings_detail = f"cost savings ratio {metrics.savings_ratio:.4f} (minimum {policy.min_cost_savings_ratio:.4f})"
     gates.append(("cost_savings", savings_ok, savings_detail))
 
     if hard:

@@ -4,7 +4,7 @@
 
 - A synthetic golden set of 63 Casa Brisa tickets (28 happy, 21 edge, 14 adversarial).
 - Invariant scoring, not exact text.
-- Providers: `fake-old`, `fake-new`, `fake-new-degraded`, `fake-new-close`, `fake-new-flat`, cassette replay, and an OpenAI-compatible adapter that stays off unless `MIGRATION_EVAL_ENABLE_LIVE=1`.
+- Providers: `fake-old`, `fake-new`, `fake-new-degraded`, `fake-new-close`, `fake-new-flat`, cassette replay, and a chat-completions HTTP adapter that stays off unless `LIVE_MODE=1`. That adapter is `python -m migration_eval compare-live`. It is not used in CI. No live result is recorded in this repo.
 - Comparison report (JSON and Markdown), paired test, bootstrap interval, go/no-go/need-human.
 - A draft ADR filled from the report.
 - A synthetic canary with a rollback decision and a JSONL audit.

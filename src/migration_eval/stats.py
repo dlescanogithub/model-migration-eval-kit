@@ -1,9 +1,10 @@
 """Paired comparison stats: exact McNemar and a ticket bootstrap.
 
-Plain version: each ticket is graded on both models. Pairs that agree do not
-say who is better. Pairs that disagree should split about evenly if the new
-model is no worse. McNemar asks how surprising the one-sided disagreements
-are. The bootstrap redraws tickets and shows a range for the pass-rate gap.
+The caller collapses seed repeats first. Each ticket is one pair. Pairs that
+agree do not say who is better. On the tickets that disagree, a new provider
+that is no worse should fail about half the time. McNemar is the exact
+one-sided coin-flip probability of the observed split. The bootstrap redraws
+tickets, not repeats, and returns a range for the pass-rate gap.
 """
 
 from __future__ import annotations

@@ -24,7 +24,7 @@ Ten questions to ask before anyone picks a model id. Each answer changes the har
    Fake latency is simulated. A 1000 ms cap does not mean a real p95. If the real budget is 400 ms, the cap changes, and only a measured provider (not these fakes) can satisfy it.
 
 8. **What text is allowed to leave the network?**
-   Default: nothing. Live mode is off. If the answer is "ticket body may go to a vendor", the adapter stays behind the env flag and out of CI. If the answer is "nothing leaves", delete the live adapter from the rollout plan.
+   Default: nothing. `LIVE_MODE` is off, and CI does not set it. If the answer is "ticket body may go to a chat-completions endpoint", the owner runs `compare-live` outside CI with a spend cap and a price that stays in the environment. If the answer is "nothing leaves", do not set `LIVE_MODE`.
 
 9. **How do we undo the swap?**
    This repo only simulates rollback. If the real undo is "flip a config flag in under five minutes", the canary criteria should match that flag. If undo takes a deploy, the canary split should stay smaller than the 10% used in the simulator, and a human should hold the flag.

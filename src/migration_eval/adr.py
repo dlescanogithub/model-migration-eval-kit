@@ -24,8 +24,11 @@ def render_migration_adr(report: CompareReport) -> str:
             "",
             "Casa Brisa (fictional shop) is deciding whether the new model may replace the old",
             "one for ticket triage. The numbers below come from the synthetic golden set in this",
-            "repo. No production traffic was read. Prices are whatever the price table says",
+            "repo. Expected labels and the scripted providers share one spec, so a fake-versus-fake",
+            "result shows that the gate runs. It is not a measure of model quality. No production",
+            "traffic was read. Prices are whatever the price table says",
             f"({report.price_note}). Latency is {report.latency_note}.",
+            f"The unit of analysis is the ticket (n={metrics.analysis_n}). Seed repeats are collapsed.",
             "",
             "## Evidence",
             "",
@@ -36,7 +39,7 @@ def render_migration_adr(report: CompareReport) -> str:
                 f"- p95 latency ms ({report.latency_note}): "
                 f"{metrics.p95_latency_ms_old:.1f} -> {metrics.p95_latency_ms_new:.1f}"
             ),
-            f"- Harmful effects across runs: {metrics.harmful_old} -> {metrics.harmful_new}",
+            f"- Harmful tickets: {metrics.harmful_old} -> {metrics.harmful_new}",
             "",
             "## Recommendation",
             "",

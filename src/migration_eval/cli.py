@@ -21,8 +21,9 @@ from migration_eval.paths import repo_root
 from migration_eval.policy import load_policy
 from migration_eval.prices import load_prices
 from migration_eval.providers.factory import build_provider
+from migration_eval.providers.openai_compat import prepare_live_compare
 from migration_eval.report import render_markdown, write_report
-from migration_eval.secretscan import scan_path
+from migration_eval.secretscan import hash_matches, scan_path
 from migration_eval.trace import append_trace
 
 
@@ -61,6 +62,16 @@ def build_parser() -> argparse.ArgumentParser:
     compare.add_argument("--record-cassette", action="store_true")
     compare.set_defaults(func=cmd_compare)
 
+    live = sub.add_parser(
+        "compare-live",
+        help="compare two chat-completions models; off unless LIVE_MODE=1, never used in CI",
+    )
+    _add_common(live)
+    live.add_argument("--runs", type=int, default=1)
+    live.add_argument("--out", type=Path, default=None)
+    live.add_argument("--cassette-dir", type=Path, default=None)
+    live.set_defaults(func=cmd_compare_live)
+
     eval_cmd = sub.add_parser("eval", help="invariant gate for one offline provider")
     _add_common(eval_cmd)
     eval_cmd.add_argument("--provider", default="fake-old")
@@ -92,6 +103,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     scan = sub.add_parser("secretscan", help="scan a tree for committed secret shapes")
     scan.add_argument("path", type=Path, nargs="?", default=None)
+    scan.add_argument(
+        "--check-hash",
+        action="store_true",
+        help="check that secretscan.py matches the sha256 recorded in docs/PROVENANCE.md",
+    )
     scan.set_defaults(func=cmd_secretscan)
 
     golden = sub.add_parser("build-golden", help="rewrite data/golden_tickets.json from the generator")
@@ -132,6 +148,41 @@ def cmd_compare(args: argparse.Namespace) -> int:
     print(text)
     log_event(
         "compare_finished",
+        old=report.old_name,
+        new=report.new_name,
+        decision=report.decision.status,
+    )
+    return 0
+
+
+def cmd_compare_live(args: argparse.Namespace) -> int:
+    """Opt-in compare. Missing LIVE_MODE or config raises before any HTTP call."""
+    root = repo_root()
+    tickets = _tickets(root, args)
+    policy = load_policy(_resolve(root, args.policy))
+    prices = load_prices(_resolve(root, args.prices))
+    cassette_dir = args.cassette_dir if args.cassette_dir is not None else root / "var" / "cassettes"
+    old, new, live_prices = prepare_live_compare(
+        dict(os.environ),
+        cassette_dir=cassette_dir,
+        base_prices=prices,
+    )
+    report = compare_providers(
+        old,
+        new,
+        tickets,
+        runs=args.runs,
+        policy=policy,
+        prices=live_prices,
+        today=args.today,
+    )
+    out = args.out if args.out is not None else root / "out" / "compare-live"
+    write_report(report, out)
+    write_migration_adr(report, out / "migration-adr.md")
+    _write_trace_summary(out / "traces.jsonl", report.old_name, report.new_name, report.decision.status)
+    print(render_markdown(report))
+    log_event(
+        "compare_live_finished",
         old=report.old_name,
         new=report.new_name,
         decision=report.decision.status,
@@ -230,6 +281,13 @@ def cmd_deprecation(args: argparse.Namespace) -> int:
 
 def cmd_secretscan(args: argparse.Namespace) -> int:
     root = repo_root()
+    if args.check_hash:
+        provenance = root / "docs" / "PROVENANCE.md"
+        if hash_matches(provenance):
+            print(f"secretscan: hash matches {provenance}")
+            return 0
+        print(f"secretscan: hash does not match {provenance}", file=sys.stderr)
+        return 1
     target = args.path if args.path is not None else root
     findings = scan_path(target)
     if not findings:

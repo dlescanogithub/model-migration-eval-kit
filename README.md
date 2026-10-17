@@ -6,13 +6,13 @@ Offline check for a fictional shop, Casa Brisa: same 63 synthetic tickets, two s
 
 Swapping a model because the new one is cheaper can hide a bad slice. This repo runs one golden set on an old and a new provider and refuses the swap when a configured slice drops too far, when the adversarial slice gets worse, or when a paired test says the extra failures are not a coin flip.
 
-Measured on 2026-10-17, package 0.1.0, Python 3.12.3. Command:
+Measured on 2026-10-17, package 0.1.1, Python 3.12.3. Command:
 
 ```text
 python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17
 ```
 
-The edge slice pass rate goes from 1.0000 to 0.6667, a drop of 33.33 points. The policy cap is 5 points, so the decision is **NO_GO**. The full table is [docs/example-report.md](docs/example-report.md). Latency in that run is simulated. Prices in that run are [EST] figures from [config/prices.yaml](config/prices.yaml), not a vendor invoice. The git commit that contains this measurement is recorded in the draft PR description (`git rev-parse HEAD` after the commit that added the report).
+The edge slice pass rate goes from 1.0000 to 0.6667, a drop of 33.33 points on n=21 tickets. The policy cap is 5 points, so the decision is **NO_GO**. That NO_GO is built into `fake-new` on purpose. It shows the gate fires. It is not a difference between two real models. Expected labels come from the same spec as the fakes, so the rates show that the machinery runs. The full table is [docs/example-report.md](docs/example-report.md). Latency in that run is simulated. Prices in that run are [EST] figures from [config/prices.yaml](config/prices.yaml), not a vendor invoice. The git commit that contains this measurement is recorded in the draft PR description (`git rev-parse HEAD` after the commit that regenerated the report).
 
 ## Demo
 
@@ -28,7 +28,7 @@ python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today
 
 1. Freeze the task (here: category, priority, queue for a Casa Brisa ticket).
 2. Freeze the golden set and the invariants, not a target sentence.
-3. Run old and new on the same tickets, repeated with seeds.
+3. Run old and new on the same tickets. Collapse seed repeats per ticket before any test. The unit of analysis is the ticket.
 4. Read the slice table, the harmful-effect count, the cost delta, and the p95.
 5. Apply the policy in [config/policy.yaml](config/policy.yaml). Accept only GO, NO_GO, or NEED_HUMAN.
 6. If the decision is GO, a named human still has to approve. This tool does not approve.
@@ -63,23 +63,23 @@ Detail: [docs/architecture.md](docs/architecture.md).
 
 ## Results
 
-Measured 2026-10-17, package 0.1.0, Python 3.12.3, command in the Problem section, 10 runs, seeds 0 through 9, 63 tickets. Source file: [docs/example-report.md](docs/example-report.md).
+Measured 2026-10-17, package 0.1.1, Python 3.12.3, command in the Problem section, 10 seed repeats collapsed to n=63 tickets. Source file: [docs/example-report.md](docs/example-report.md).
 
-| Slice | Old pass rate | New pass rate | Drop (points) |
-| --- | ---: | ---: | ---: |
-| happy | 1.0000 | 0.9643 | 3.57 |
-| edge | 1.0000 | 0.6667 | 33.33 |
-| adversarial | 1.0000 | 1.0000 | 0.00 |
-| overall | 1.0000 | 0.8730 | 12.70 |
+| Slice | n | Old pass rate | New pass rate | Drop (points) | Bootstrap 95% (new - old) |
+| --- | ---: | ---: | ---: | ---: | --- |
+| happy | 28 | 1.0000 | 0.9643 | 3.57 | [-0.1071, 0.0000] |
+| edge | 21 | 1.0000 | 0.6667 | 33.33 | [-0.5238, -0.1429] |
+| adversarial | 14 | 1.0000 | 1.0000 | 0.00 | [0.0000, 0.0000] |
+| overall | 63 | 1.0000 | 0.8730 | 12.70 | [-0.2222, -0.0476] |
 
 | | fake-old | fake-new |
 | --- | ---: | ---: |
 | Cost per run, USD, simulated, prices [EST] | 0.069515 | 0.014914 |
 | p50 latency ms, simulated | 440.0 | 196.0 |
 | p95 latency ms, simulated | 459.0 | 209.0 |
-| Harmful effects across 10 runs | 0 | 0 |
+| Harmful tickets | 0 | 0 |
 
-Decision: **NO_GO**. Reasons: edge drop 33.33 points (cap 5.00); McNemar one-sided p = 8.27181e-25 with 80 pairs where only the new model failed and 0 the other way.
+Decision: **NO_GO**, because the edge slice drops 33.33 points on 21 tickets (cap 5). The paired test uses those 63 tickets, not 63 times the 10 seeds. Eight tickets fail only on `fake-new`. Seeds change simulated latency and are collapsed before the test, so adding repeats does not change the p-value or the intervals above. The scripted gap is there to exercise the gate.
 
 Other profiles, same command shape, `--runs 10 --today 2026-10-17`, measured in the same session:
 
@@ -87,7 +87,15 @@ Other profiles, same command shape, `--runs 10 --today 2026-10-17`, measured in 
 | --- | --- | ---: | --- |
 | fake-new-close | GO | 1.0000 | Same labels as fake-old, lower [EST] price |
 | fake-new-flat | NEED_HUMAN | 1.0000 | Same labels, savings ratio 0.0000 |
-| fake-new-degraded | NO_GO | 0.6667 | Adversarial pass rate 0, 140 harmful effects across 10 runs |
+| fake-new-degraded | NO_GO | 0.6667 | Adversarial pass rate 0 on n=14, 14 harmful tickets |
+
+### Live compare (not run)
+
+No live call was made for this repository. The table is a placeholder for the owner. Prices for a live run come from the environment and are not stored here.
+
+| Date | Command | Old model | New model | Decision | n | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| — | `python -m migration_eval compare-live --runs 1 --today YYYY-MM-DD` | set `LLM_MODEL_OLD` | set `LLM_MODEL_NEW` | not run | 63 | Requires `LIVE_MODE=1` plus the variables in `.env.example`. Missing config exits 2 and sends no request. Cassettes go to `var/cassettes/`, which is gitignored. |
 
 The reference gate `python -m migration_eval eval --provider fake-old --runs 5 --today 2026-10-17` printed `pass_rate=1.0000`, `harmful=0`, `cost_per_run=0.069515`, `p95_ms=459.0`, `ok=true`.
 
@@ -120,7 +128,7 @@ Client-style cases use the fictional shop Casa Brisa or a described pattern. The
 | Incident and rollback | [docs/RUNBOOK.md](docs/RUNBOOK.md), synthetic rollback in the canary |
 | Forced red gate | `make eval-regression` must exit non-zero. CI asserts that |
 | Secret scan | [src/migration_eval/secretscan.py](src/migration_eval/secretscan.py), CI job `Secret scan` |
-| Live provider off | [src/migration_eval/providers/openai_compat.py](src/migration_eval/providers/openai_compat.py), env flag default 0 |
+| Live provider off | [src/migration_eval/providers/openai_compat.py](src/migration_eval/providers/openai_compat.py). `LIVE_MODE` defaults to off. CI does not set it |
 
 Not covered yet:
 
@@ -155,7 +163,7 @@ See [SECURITY.md](SECURITY.md) and [docs/RISKS.md](docs/RISKS.md).
 - It does not mirror live traffic or run a live canary.
 - It does not approve a migration. GO still needs a human.
 - It does not execute `route_ticket`. The tool call is a field on a JSON object.
-- It does not prove a real model. `fake-old` and `fake-new` are scripted simulators.
+- It does not prove a real model. `fake-old` and `fake-new` are scripted simulators, and their labels come from the same spec.
 - It does not review a vendor contract.
 - It does not use client data. Every ticket is synthetic.
 
@@ -166,7 +174,7 @@ See [SECURITY.md](SECURITY.md) and [docs/RISKS.md](docs/RISKS.md).
 | Golden set, invariants, fake providers, cassette, comparison, policy, report, ADR draft | Implemented |
 | Synthetic canary and rollback decision, deprecation calendar | Implemented |
 | Forced regression (`fake-new-degraded` must be NO_GO) | Implemented |
-| Optional OpenAI-compatible adapter, off by default | Implemented, not used in CI |
+| Optional chat-completions HTTP adapter (`compare-live`), off unless `LIVE_MODE=1` | Implemented, not used in CI, no live result recorded |
 | Live shadow, live canary, contract review | Design only |
 | Document-extraction swap, voice-agent swap, personal assistant, newsletter | Design only |
 
@@ -185,15 +193,33 @@ python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today
 python -m migration_eval canary --old fake-old --new fake-new --today 2026-10-17 --out out/canary-audit.jsonl
 python -m migration_eval deprecation-check --today 2026-10-17
 python -m migration_eval secretscan .
+python -m migration_eval secretscan --check-hash
 ```
 
-`make setup`, `make lint`, `make test`, `make eval`, `make demo`, and `make secretscan` wrap those commands. `make eval-regression` is expected to exit non-zero.
+`make setup`, `make lint`, `make test`, `make eval`, `make demo`, `make secretscan`, and `make secretscan-hash` wrap those commands. `make eval-regression` is expected to exit non-zero.
+
+Optional live compare, not used above and not run for the tables in this file. It needs `LIVE_MODE=1`, a base URL, an API key, two model names, a spend cap, and a price per million tokens with a price date. The same rate is applied to both models. No price for this mode is stored in the repo. If any of those are missing, the command exits 2 and does not send a request.
+
+```text
+LIVE_MODE=1 \
+LLM_BASE_URL='https://host.example/v1' \
+LLM_API_KEY='set-this-locally' \
+LLM_MODEL_OLD='old-model' \
+LLM_MODEL_NEW='new-model' \
+MAX_LIVE_SPEND_USD='1' \
+LLM_USD_PER_M_INPUT='set-this-locally' \
+LLM_USD_PER_M_OUTPUT='set-this-locally' \
+LLM_PRICE_DATE='YYYY-MM-DD' \
+python -m migration_eval compare-live --runs 1 --today YYYY-MM-DD --out out/live
+```
+
+Cassettes from that command are written under `var/cassettes/`. That directory is gitignored.
 
 The committed report was produced with the compare command above. Tests check that [docs/example-report.md](docs/example-report.md), [docs/example-migration-adr.md](docs/example-migration-adr.md), and [docs/example-canary-audit.jsonl](docs/example-canary-audit.jsonl) match a fresh run.
 
 ## Next steps
 
-- Replace the scripted fakes with cassette replays of a real model only after a human opts in, outside CI.
+- An owner can fill the live placeholder table with `compare-live` outside CI. This README does not contain that result.
 - Add a golden set whose labels were written by a person, not by the same function the fake uses.
 - Keep live shadow and live canary as a later phase. They are not in this repo.
 

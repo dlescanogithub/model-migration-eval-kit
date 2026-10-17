@@ -89,48 +89,54 @@ def _metrics(
     bootstrap_rounds: int,
     bootstrap_seed: int,
 ) -> Metrics:
+    """Score each ticket once. Seed repeats collapse before any rate, test, or interval."""
+    old_pass = _collapsed_pass(old_rows)
+    new_pass = _collapsed_pass(new_rows)
     categories = tuple(sorted({ticket.true_category for ticket in tickets}))
     slices = tuple(
-        SliceDelta(
-            name=name,
-            old_pass_rate=_rate(old_rows, _slice_is(name)),
-            new_pass_rate=_rate(new_rows, _slice_is(name)),
+        _delta(
+            name,
+            [ticket.id for ticket in tickets if ticket.slice == name],
+            old_pass,
+            new_pass,
+            bootstrap_rounds=bootstrap_rounds,
+            bootstrap_seed=bootstrap_seed,
         )
         for name in SLICES
     )
     category_deltas = tuple(
-        SliceDelta(
-            name=name,
-            old_pass_rate=_rate(old_rows, _category_is(name)),
-            new_pass_rate=_rate(new_rows, _category_is(name)),
+        _delta(
+            name,
+            [ticket.id for ticket in tickets if ticket.true_category == name],
+            old_pass,
+            new_pass,
+            bootstrap_rounds=bootstrap_rounds,
+            bootstrap_seed=bootstrap_seed,
+            with_interval=False,
         )
         for name in categories
     )
-    overall = SliceDelta(
-        name="overall",
-        old_pass_rate=_rate(old_rows, _always),
-        new_pass_rate=_rate(new_rows, _always),
+    overall = _delta(
+        "overall",
+        [ticket.id for ticket in tickets],
+        old_pass,
+        new_pass,
+        bootstrap_rounds=bootstrap_rounds,
+        bootstrap_seed=bootstrap_seed,
     )
-    new_worse, new_better = _discordant(old_rows, new_rows)
-    old_by_ticket = _pass_by_ticket(old_rows)
-    new_by_ticket = _pass_by_ticket(new_rows)
-    low, high = bootstrap_rate_delta(
-        old_by_ticket,
-        new_by_ticket,
-        rounds=bootstrap_rounds,
-        seed=bootstrap_seed,
-    )
+    new_worse = sum(1 for ticket in tickets if old_pass[ticket.id] and not new_pass[ticket.id])
+    new_better = sum(1 for ticket in tickets if new_pass[ticket.id] and not old_pass[ticket.id])
     runs = len({row.seed for row in old_rows})
     return Metrics(
         slices=slices,
         categories=category_deltas,
         overall=overall,
-        format_failure_rate_old=_fraction(old_rows, lambda row: row.check.format_failed),
-        format_failure_rate_new=_fraction(new_rows, lambda row: row.check.format_failed),
-        tool_failure_rate_old=_fraction(old_rows, lambda row: row.check.tool_failed),
-        tool_failure_rate_new=_fraction(new_rows, lambda row: row.check.tool_failed),
-        harmful_old=sum(1 for row in old_rows if row.check.harmful),
-        harmful_new=sum(1 for row in new_rows if row.check.harmful),
+        format_failure_rate_old=_ticket_flag_rate(old_rows, lambda row: row.check.format_failed),
+        format_failure_rate_new=_ticket_flag_rate(new_rows, lambda row: row.check.format_failed),
+        tool_failure_rate_old=_ticket_flag_rate(old_rows, lambda row: row.check.tool_failed),
+        tool_failure_rate_new=_ticket_flag_rate(new_rows, lambda row: row.check.tool_failed),
+        harmful_old=_harmful_tickets(old_rows),
+        harmful_new=_harmful_tickets(new_rows),
         p95_latency_ms_old=percentile([row.completion.latency_ms for row in old_rows], 95),
         p95_latency_ms_new=percentile([row.completion.latency_ms for row in new_rows], 95),
         p50_latency_ms_old=percentile([row.completion.latency_ms for row in old_rows], 50),
@@ -140,54 +146,64 @@ def _metrics(
         mcnemar_new_worse=new_worse,
         mcnemar_new_better=new_better,
         mcnemar_p_regression=mcnemar_regression_pvalue(new_worse, new_better),
+        bootstrap_low=overall.bootstrap_low,
+        bootstrap_high=overall.bootstrap_high,
+        analysis_n=len(tickets),
+    )
+
+
+def _delta(
+    name: str,
+    ids: list[str],
+    old_pass: dict[str, bool],
+    new_pass: dict[str, bool],
+    *,
+    bootstrap_rounds: int,
+    bootstrap_seed: int,
+    with_interval: bool = True,
+) -> SliceDelta:
+    if not ids:
+        raise ValueError("slice or category has no tickets")
+    low = 0.0
+    high = 0.0
+    if with_interval:
+        old_map = {item: 1.0 if old_pass[item] else 0.0 for item in ids}
+        new_map = {item: 1.0 if new_pass[item] else 0.0 for item in ids}
+        low, high = bootstrap_rate_delta(
+            old_map,
+            new_map,
+            rounds=bootstrap_rounds,
+            seed=bootstrap_seed,
+        )
+    return SliceDelta(
+        name=name,
+        old_pass_rate=sum(1 for item in ids if old_pass[item]) / len(ids),
+        new_pass_rate=sum(1 for item in ids if new_pass[item]) / len(ids),
+        n=len(ids),
         bootstrap_low=low,
         bootstrap_high=high,
     )
 
 
-def _slice_is(name: str) -> Callable[[Graded], bool]:
-    def pred(row: Graded) -> bool:
-        return row.ticket.slice == name
-
-    return pred
-
-
-def _category_is(name: str) -> Callable[[Graded], bool]:
-    def pred(row: Graded) -> bool:
-        return row.ticket.true_category == name
-
-    return pred
-
-
-def _always(_row: Graded) -> bool:
-    return True
-
-
-def _rate(rows: list[Graded], pred: Callable[[Graded], bool]) -> float:
-    chosen = [row for row in rows if pred(row)]
-    if not chosen:
-        raise ValueError("slice or category has no rows")
-    return sum(1 for row in chosen if row.check.passed) / len(chosen)
-
-
-def _fraction(rows: list[Graded], pred: Callable[[Graded], bool]) -> float:
-    if not rows:
-        return 0.0
-    return sum(1 for row in rows if pred(row)) / len(rows)
-
-
-def _discordant(old_rows: list[Graded], new_rows: list[Graded]) -> tuple[int, int]:
-    paired = _pair(old_rows, new_rows)
-    worse = sum(1 for old, new in paired if old.check.passed and not new.check.passed)
-    better = sum(1 for old, new in paired if new.check.passed and not old.check.passed)
-    return worse, better
-
-
-def _pass_by_ticket(rows: list[Graded]) -> dict[str, float]:
+def _collapsed_pass(rows: list[Graded]) -> dict[str, bool]:
+    """A ticket passes only when every repeat passed. One seed cannot mint extra pairs."""
     buckets: dict[str, list[bool]] = {}
     for row in rows:
         buckets.setdefault(row.ticket.id, []).append(row.check.passed)
-    return {key: sum(1 for item in values if item) / len(values) for key, values in buckets.items()}
+    return {key: all(values) for key, values in buckets.items()}
+
+
+def _ticket_flag_rate(rows: list[Graded], pred: Callable[[Graded], bool]) -> float:
+    flagged: dict[str, bool] = {}
+    for row in rows:
+        flagged[row.ticket.id] = flagged.get(row.ticket.id, False) or pred(row)
+    if not flagged:
+        return 0.0
+    return sum(1 for value in flagged.values() if value) / len(flagged)
+
+
+def _harmful_tickets(rows: list[Graded]) -> int:
+    return len({row.ticket.id for row in rows if row.check.harmful})
 
 
 def _pair(old_rows: list[Graded], new_rows: list[Graded]) -> list[tuple[Graded, Graded]]:

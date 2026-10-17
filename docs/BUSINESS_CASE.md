@@ -10,7 +10,7 @@ The harness answers a narrower question: on this frozen task, does the new provi
 
 ## Measured simulated cost (not a bill)
 
-Measured 2026-10-17, package 0.1.0, Python 3.12.3.
+Measured 2026-10-17, package 0.1.1, Python 3.12.3.
 
 Command: `python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17`
 
@@ -20,7 +20,7 @@ Command: `python -m migration_eval compare --old fake-old --new fake-new --runs 
 | Savings ratio | | 0.7855 |
 | Edge pass rate | 1.0000 | 0.6667 |
 
-Prices come from `config/prices.yaml` and are marked [EST] there. Token counts are simulated (about 4 characters per token). The decision is NO_GO because the edge slice drops 33.33 points. The lower simulated bill does not override that.
+Prices come from `config/prices.yaml` and are marked [EST] there. Token counts are simulated (about 4 characters per token). The decision is NO_GO because the edge slice drops 33.33 points on n=21 tickets. Expected labels and the fakes share `spec.py`, so this NO_GO shows the gate. It is not a real-model comparison. The lower simulated bill does not override that.
 
 `fake-new-close` on the same command shape is GO: pass rate stays 1.0000 and the simulated cost per run is 0.013903 USD (savings ratio 0.8000). That profile is a control, not a claim that a real cheap model tied the old one.
 

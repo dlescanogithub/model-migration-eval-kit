@@ -3,7 +3,7 @@
 
 PY ?= python3
 
-.PHONY: setup lint test eval eval-regression demo secretscan
+.PHONY: setup lint test eval eval-regression demo secretscan secretscan-hash
 
 setup:
 	$(PY) -m pip install -e ".[dev]"
@@ -29,3 +29,6 @@ demo:
 
 secretscan:
 	$(PY) -m migration_eval secretscan .
+
+secretscan-hash:
+	$(PY) -m migration_eval secretscan --check-hash

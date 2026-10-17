@@ -9,7 +9,7 @@ Open a private issue on this repository, or contact the owner directly. Do not i
 ## What the default path does
 
 - Providers in CI and in the default commands are scripted fakes or cassette replay.
-- `MIGRATION_EVAL_ENABLE_LIVE` defaults to `0`. The OpenAI-compatible adapter raises if that flag is off.
+- `LIVE_MODE` defaults to off. The chat-completions adapter raises if that flag is not `1`, and it raises before any request when the URL, key, model, spend cap, or price is missing.
 - Cassette replay does not fall through to the network when a row is missing.
 - Logs are JSON. The logger drops fields named `api_key`, `authorization`, or `token`.
 - `.env` is gitignored. `.env.example` has empty values and placeholders only.
@@ -17,7 +17,7 @@ Open a private issue on this repository, or contact the owner directly. Do not i
 
 ## What a live adapter would touch
 
-If you set `MIGRATION_EVAL_ENABLE_LIVE=1` plus a base URL, model, and key, `openai-compat` sends the ticket subject and body to that URL. Do not point it at real customer tickets. Do not commit the key. CI must not set the flag.
+If you set `LIVE_MODE=1` plus `LLM_BASE_URL`, `LLM_API_KEY`, model names, `MAX_LIVE_SPEND_USD`, and a price per million tokens, `python -m migration_eval compare-live` sends the ticket subject and body to that URL. Do not point it at real customer tickets. Do not commit the key or the price. CI must not set `LIVE_MODE`. The command writes cassettes under `var/`, which is gitignored.
 
 ## Known limits
 

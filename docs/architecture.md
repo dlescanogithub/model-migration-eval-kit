@@ -11,7 +11,7 @@ flowchart TD
   factory[Provider factory]
   fake[Fake profiles]
   cassette[Cassette replay]
-  live[OpenAI-compatible adapter off by default]
+  live[Chat-completions HTTP adapter off unless LIVE_MODE=1]
   grade[Grade: invariants plus cost]
   stats[McNemar and bootstrap]
   decide[Policy decision]
@@ -45,9 +45,9 @@ flowchart TD
 | `invariants.py` | Effect checks |
 | `providers/fake.py` | Scripted behaviours, including the degraded profile |
 | `providers/cassette.py` | Record or replay. Replay never calls the network |
-| `providers/openai_compat.py` | Optional HTTP adapter. Constructor raises when the flag is off |
-| `compare.py` | Paired runs |
-| `stats.py` | Exact one-sided McNemar and a ticket bootstrap |
+| `providers/openai_compat.py` | Optional chat-completions HTTP adapter. Raises before any request when `LIVE_MODE` is off or config is missing. Writes cassettes under `var/` on `compare-live` |
+| `compare.py` | Paired runs. Seed repeats collapse to one pass/fail per ticket |
+| `stats.py` | Exact one-sided McNemar and a bootstrap over tickets |
 | `policy.py` | GO, NO_GO, NEED_HUMAN |
 | `canary.py` | Stratified synthetic split and rollback decision |
 | `deprecation.py` | Calendar versus an injected date |
