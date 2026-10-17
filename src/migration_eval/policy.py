@@ -62,6 +62,8 @@ class Metrics:
     analysis_n: int = 0
     contract_mismatch_old: int = 0
     contract_mismatch_new: int = 0
+    priority_ok_old: int = 0
+    priority_ok_new: int = 0
 
     @property
     def savings_ratio(self) -> float:

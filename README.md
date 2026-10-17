@@ -6,7 +6,7 @@ Offline check for a fictional shop, Casa Brisa: same 63 synthetic tickets, two s
 
 Swapping a model because the new one is cheaper can hide a bad slice. This repo runs one golden set on an old and a new provider and refuses the swap when a configured slice drops too far, when the adversarial slice gets worse, or when a paired test says the extra failures are not a coin flip.
 
-Measured on 2026-10-17, package 0.2.1, Python 3.12.3. Command:
+Measured on 2026-10-17, package 0.2.2, Python 3.12.3. Command:
 
 ```text
 python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17
@@ -69,7 +69,7 @@ Measured on 2026-10-17, package 0.2.0, Python 3.12.3: `platform-migrations eval`
 
 ## Results
 
-Measured 2026-10-17, package 0.2.1, Python 3.12.3, command in the Problem section, 10 seed repeats collapsed to n=63 tickets. Re-run on this package matched the committed report. Source file: [docs/example-report.md](docs/example-report.md). Contract mismatch tickets are 0 and 1. The one ticket is the scripted invalid JSON in `fake-new`. It is not a harmful ticket.
+Measured 2026-10-17, package 0.2.2, Python 3.12.3, command in the Problem section, 10 seed repeats collapsed to n=63 tickets. Re-run on this package matched the committed report. Source file: [docs/example-report.md](docs/example-report.md). Contract mismatch tickets are 0 and 1. The one ticket is the scripted invalid JSON in `fake-new`. It is not a harmful ticket. On that same offline run, priority_ok is 63 on fake-old and 58 on fake-new. It is counted separately from the overall pass rate. The fakes do not read the live prompt.
 
 | Slice | n | Old pass rate | New pass rate | Drop (points) | Bootstrap 95% (new - old) |
 | --- | ---: | ---: | ---: | ---: | --- |
@@ -97,13 +97,17 @@ Other profiles, same command shape, `--runs 10 --today 2026-10-17`, measured in 
 
 ### Live compare
 
-Estado: **implementado, verificación live pendiente**. Chief todavía no reverificó este arreglo. No hay un resultado live nuevo en este README. La tabla de abajo sigue vacía a propósito.
+La primera corrida live fue el 2026-10-17: `python -m migration_eval compare-live --runs 1`, 63 tickets, el mismo modelo en los dos lados. Fue un auto-compare, no una migración.
 
-El costo que calcula este repo es tokens de entrada y de salida por la tarifa del entorno. Ignora tokens cacheados, así que sobreestima cuando el proveedor descuenta el cache. `compare-live` con el mismo modelo en los dos lados es un auto-compare, no una migración real.
+El contrato salió bien: 63/63 en schema, categoría, cola y un solo `route_ticket`; inyección 63/63; harmful 0/63. La prioridad pasó 37/63 (58,7 %). Los 26 fallos fueron solo de prioridad: shipping 7, payment 7, complaint 6, order_status 3, return_request 3. El prompt solo decía `priority: one of low, medium, high`. Las reglas del grader no estaban en el prompt. Este cambio las genera desde la misma tabla que usa el grader (`PRIORITY_RULES` en `spec.py`).
 
-| Date | Command | Old model | New model | Decision | n | Notes |
-| --- | --- | --- | --- | --- | --- | --- |
-| — | `python -m migration_eval compare-live --runs 1 --today YYYY-MM-DD` | set `LLM_MODEL_OLD` | set `LLM_MODEL_NEW` | not run | 63 | Requires `LIVE_MODE=1` plus the variables in `.env.example`. Missing config exits 2 and sends no request. Cassettes go to `var/cassettes/`, which is gitignored. |
+La re-verificación live de ese arreglo está pendiente. No hay un pass live nuevo en este README.
+
+El costo que calcula este repo es tokens de entrada y de salida por la tarifa del entorno. Ignora tokens cacheados, así que sobreestima cuando el proveedor descuenta el cache. En esa corrida del 2026-10-17 el estimado fue ~US$0,100 y el costo real fue US$0,053.
+
+| Date | Command | Sides | What was measured | n | Notes |
+| --- | --- | --- | --- | ---: | --- |
+| 2026-10-17 | `compare-live --runs 1` | same model both sides | priority 37/63 (58.7%); contract 63/63; harmful 0/63 | 63 | Self-compare, not a migration. Priority rules were absent from the prompt. Fixed in this change. Re-verification pending. Real cost US$0.053; estimate ~US$0.100 because cached tokens are ignored. No model name is stored here. |
 
 The reference gate `python -m migration_eval eval --provider fake-old --runs 5 --today 2026-10-17` printed `pass_rate=1.0000`, `harmful=0`, `cost_per_run=0.069515`, `p95_ms=459.0`, `ok=true`.
 
@@ -129,7 +133,7 @@ Client-style cases use the fictional shop Casa Brisa or a described pattern. The
 
 | Control | Where it lives |
 | --- | --- |
-| Allowed categories, priority rules, allowed queue, allowed tool | [src/migration_eval/spec.py](src/migration_eval/spec.py), [src/migration_eval/invariants.py](src/migration_eval/invariants.py) |
+| Allowed categories, priority rules, allowed queue, allowed tool | [src/migration_eval/spec.py](src/migration_eval/spec.py) is the table. The live prompt's priority lines and category-to-queue lines are generated from it. [src/migration_eval/invariants.py](src/migration_eval/invariants.py) scores the result |
 | Human approval | The decision GO is a recommendation. [src/migration_eval/adr.py](src/migration_eval/adr.py) writes a draft ADR and does not apply it |
 | Traceability | JSONL trace summary from `compare`, canary audit JSONL from [src/migration_eval/canary.py](src/migration_eval/canary.py) |
 | Risks | [docs/RISKS.md](docs/RISKS.md) |
@@ -185,7 +189,7 @@ See [SECURITY.md](SECURITY.md) and [docs/RISKS.md](docs/RISKS.md).
 | Golden set, invariants, fake providers, cassette, comparison, policy, report, ADR draft | Implemented |
 | Synthetic canary and rollback decision, deprecation calendar | Implemented |
 | Forced regression (`fake-new-degraded` must be NO_GO) | Implemented |
-| Optional chat-completions HTTP adapter (`compare-live`), off unless `LIVE_MODE=1` | implementado, verificación live pendiente. Not used in CI. No live result recorded |
+| Optional chat-completions HTTP adapter (`compare-live`), off unless `LIVE_MODE=1` | Implemented. First live run 2026-10-17 was a self-compare: priority 37/63 (58.7%) because those rules were absent from the prompt. Fixed here. Re-verification pending. Not used in CI |
 | Live shadow, live canary, contract review | Design only |
 | Document-extraction swap, voice-agent swap, personal assistant, newsletter | Design only |
 | Platform inventory, waves, parity, checklist gate, registry simulator, 12 invariants, forced parity regression | Implemented, synthetic files only |

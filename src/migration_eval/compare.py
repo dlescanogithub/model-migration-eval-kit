@@ -11,9 +11,19 @@ from migration_eval.policy import Decision, Metrics, Policy, SliceDelta, decide
 from migration_eval.prices import PriceTable
 from migration_eval.providers.base import Provider
 from migration_eval.providers.fake import PROFILES
+from migration_eval.spec import priority_rules_missing_from
 from migration_eval.stats import bootstrap_rate_delta, mcnemar_regression_pvalue, percentile
 
 CONTRACT_SANITY_WARNING = "posible desajuste prompt/grader, no es calidad del modelo"
+_FAKE_PRIORITY_NOTE = (
+    "priority_ok is reported separately from the overall pass rate. "
+    "Both sides are scripted fakes and do not read the live prompt. "
+    "The priority row is the spec check on the shared priority table."
+)
+_PRESENT_PRIORITY_NOTE = (
+    "priority_ok is reported separately from the overall pass rate. "
+    "The prompt contains the same priority table the grader uses."
+)
 
 
 @dataclass(frozen=True)
@@ -29,6 +39,8 @@ class CompareReport:
     latency_note: str
     disagreements: tuple[str, ...]
     contract_warning: str = ""
+    priority_note: str = ""
+    withhold_blended_pass: bool = False
 
 
 def compare_providers(
@@ -43,6 +55,7 @@ def compare_providers(
     bootstrap_rounds: int = 400,
     bootstrap_seed: int = 0,
     stop_on_live_error: bool = False,
+    system_prompt: str | None = None,
 ) -> CompareReport:
     if runs < 1:
         raise ValueError("runs must be >= 1")
@@ -88,6 +101,8 @@ def compare_providers(
         latency_note=latency_note,
         disagreements=_disagreements(old_rows, new_rows),
         contract_warning=_contract_warning(metrics, old.name, new.name),
+        priority_note=_priority_note(old.name, new.name, system_prompt),
+        withhold_blended_pass=_withhold_blended_pass(old.name, new.name, system_prompt),
     )
 
 
@@ -149,6 +164,8 @@ def _metrics(
         harmful_new=_harmful_tickets(new_rows),
         contract_mismatch_old=_contract_tickets(old_rows),
         contract_mismatch_new=_contract_tickets(new_rows),
+        priority_ok_old=_priority_ok_tickets(old_rows),
+        priority_ok_new=_priority_ok_tickets(new_rows),
         p95_latency_ms_old=percentile([row.completion.latency_ms for row in old_rows], 95),
         p95_latency_ms_new=percentile([row.completion.latency_ms for row in new_rows], 95),
         p50_latency_ms_old=percentile([row.completion.latency_ms for row in old_rows], 50),
@@ -220,6 +237,47 @@ def _harmful_tickets(rows: list[Graded]) -> int:
 
 def _contract_tickets(rows: list[Graded]) -> int:
     return len({row.ticket.id for row in rows if row.check.contract_mismatch})
+
+
+def _priority_ok_tickets(rows: list[Graded]) -> int:
+    """A ticket counts only when every seed repeat matched the priority table."""
+    buckets: dict[str, list[bool]] = {}
+    for row in rows:
+        buckets.setdefault(row.ticket.id, []).append(row.check.priority_ok)
+    return sum(1 for values in buckets.values() if all(values))
+
+
+def _priority_prompt(system_prompt: str | None) -> str:
+    if system_prompt is not None:
+        return system_prompt
+    from migration_eval.providers.openai_compat import SYSTEM_PROMPT
+
+    return SYSTEM_PROMPT
+
+
+def _scripted_pair(old_name: str, new_name: str, system_prompt: str | None) -> bool:
+    return system_prompt is None and old_name.startswith("fake-") and new_name.startswith("fake-")
+
+
+def _priority_note(old_name: str, new_name: str, system_prompt: str | None) -> str:
+    if _scripted_pair(old_name, new_name, system_prompt):
+        return _FAKE_PRIORITY_NOTE
+    missing = priority_rules_missing_from(_priority_prompt(system_prompt))
+    if not missing:
+        return _PRESENT_PRIORITY_NOTE
+    listed = "; ".join(missing)
+    return (
+        "priority depends on rules that are not in the prompt. "
+        f"Missing from the prompt: {listed}. "
+        "The overall pass rate mixes that dimension and is not a live quality number. "
+        "That blended pass rate is withheld."
+    )
+
+
+def _withhold_blended_pass(old_name: str, new_name: str, system_prompt: str | None) -> bool:
+    if _scripted_pair(old_name, new_name, system_prompt):
+        return False
+    return bool(priority_rules_missing_from(_priority_prompt(system_prompt)))
 
 
 class IncompleteLiveRun(RuntimeError):

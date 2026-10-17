@@ -1,0 +1,41 @@
+{
+  "note": "Representative raw completions for the live contract. No network, no key, no real model name.",
+  "responses": [
+    {
+      "ticket_id": "CB-033",
+      "raw_text": "{\"category\": \"shipping\", \"priority\": \"low\", \"queue\": \"queue_logistics\", \"rationale\": \"Short reason. No contact data.\", \"tool_calls\": [{\"name\": \"route_ticket\", \"arguments\": {\"queue\": \"queue_logistics\"}}]}"
+    },
+    {
+      "ticket_id": "CB-032",
+      "raw_text": "{\"category\": \"shipping\", \"priority\": \"medium\", \"queue\": \"queue_logistics\", \"rationale\": \"Short reason. No contact data.\", \"tool_calls\": [{\"name\": \"route_ticket\", \"arguments\": {\"queue\": \"queue_logistics\"}}]}"
+    },
+    {
+      "ticket_id": "CB-041",
+      "raw_text": "{\"category\": \"payment\", \"priority\": \"medium\", \"queue\": \"queue_billing\", \"rationale\": \"Short reason. No contact data.\", \"tool_calls\": [{\"name\": \"route_ticket\", \"arguments\": {\"queue\": \"queue_billing\"}}]}"
+    },
+    {
+      "ticket_id": "CB-046",
+      "raw_text": "{\"category\": \"complaint\", \"priority\": \"medium\", \"queue\": \"queue_care\", \"rationale\": \"Short reason. No contact data.\", \"tool_calls\": [{\"name\": \"route_ticket\", \"arguments\": {\"queue\": \"queue_care\"}}]}"
+    },
+    {
+      "ticket_id": "CB-006",
+      "raw_text": "{\"category\": \"order_status\", \"priority\": \"low\", \"queue\": \"queue_orders\", \"rationale\": \"Short reason. No contact data.\", \"tool_calls\": [{\"name\": \"route_ticket\", \"arguments\": {\"queue\": \"queue_orders\"}}]}"
+    },
+    {
+      "ticket_id": "CB-014",
+      "raw_text": "{\"category\": \"return_request\", \"priority\": \"low\", \"queue\": \"queue_returns\", \"rationale\": \"Short reason. No contact data.\", \"tool_calls\": [{\"name\": \"route_ticket\", \"arguments\": {\"queue\": \"queue_returns\"}}]}"
+    },
+    {
+      "ticket_id": "CB-019",
+      "raw_text": "{\"category\": \"product_question\", \"priority\": \"low\", \"queue\": \"queue_catalog\", \"rationale\": \"Short reason. No contact data.\", \"tool_calls\": [{\"name\": \"route_ticket\", \"arguments\": {\"queue\": \"queue_catalog\"}}]}"
+    },
+    {
+      "ticket_id": "CB-055",
+      "raw_text": "{\"category\": \"other\", \"priority\": \"low\", \"queue\": \"queue_general\", \"rationale\": \"Short reason. No contact data.\", \"tool_calls\": [{\"name\": \"route_ticket\", \"arguments\": {\"queue\": \"queue_general\"}}]}"
+    },
+    {
+      "ticket_id": "CB-054",
+      "raw_text": "{\"category\": \"complaint\", \"priority\": \"medium\", \"queue\": \"queue_care\", \"rationale\": \"Short reason. No contact data.\", \"tool_calls\": [{\"name\": \"route_ticket\", \"arguments\": {\"queue\": \"queue_care\"}}]}"
+    }
+  ]
+}

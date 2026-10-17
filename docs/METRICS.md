@@ -16,7 +16,7 @@
 | Reference eval | `fake-old` alone must clear pass rate 0.99, zero harmful effects, and the cost cap | Exit 0 | pass rate 1.0000, harmful 0, cost 0.069515 USD, 5 runs |
 | Regression probe | `fake-new-degraded` must be NO_GO | Process exits non-zero | Measured NO_GO |
 
-Command for the comparison numbers: `python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17`. Package 0.2.1. Python 3.12.3. Date 2026-10-17. The same command on this package matches the committed report. Platform-move invariants are in [platform-migrations/README.md](platform-migrations/README.md).
+Command for the comparison numbers: `python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17`. Package 0.2.2. Python 3.12.3. Date 2026-10-17. The same command on this package matches the committed report. Platform-move invariants are in [platform-migrations/README.md](platform-migrations/README.md).
 
 Labels and the scripted replies come from `src/migration_eval/spec.py`. The pass rates show that the grader and the gate run. They do not measure model quality. `fake-new` is written to miss the hard edge tickets, so the NO_GO demonstrates the gate.
 

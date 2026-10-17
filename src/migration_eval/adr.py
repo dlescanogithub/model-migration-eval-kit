@@ -5,11 +5,19 @@ from __future__ import annotations
 from pathlib import Path
 
 from migration_eval.compare import CompareReport
+from migration_eval.report import visible_reasons
 
 
 def render_migration_adr(report: CompareReport) -> str:
     metrics = report.metrics
-    reason_lines = "\n".join(f"- {reason}" for reason in report.decision.reasons)
+    reason_lines = "\n".join(f"- {reason}" for reason in visible_reasons(report))
+    if report.withhold_blended_pass:
+        overall = (
+            "- Overall pass rate: withheld. It mixes priority with the other checks, "
+            "and the priority rules are not in the prompt. It is not a live quality number."
+        )
+    else:
+        overall = f"- Overall pass rate: {metrics.overall.old_pass_rate:.4f} -> {metrics.overall.new_pass_rate:.4f}"
     return "\n".join(
         [
             f"# ADR draft: ticket-triage model {report.old_name} -> {report.new_name}",
@@ -32,7 +40,7 @@ def render_migration_adr(report: CompareReport) -> str:
             "",
             "## Evidence",
             "",
-            (f"- Overall pass rate: {metrics.overall.old_pass_rate:.4f} -> {metrics.overall.new_pass_rate:.4f}"),
+            overall,
             (f"- Cost per run USD: {metrics.cost_per_run_old:.6f} -> {metrics.cost_per_run_new:.6f}"),
             f"- Savings ratio: {metrics.savings_ratio:.4f}",
             (
