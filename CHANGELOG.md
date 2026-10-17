@@ -5,7 +5,8 @@
 - The live prompt's priority lines are generated from `PRIORITY_RULES`, the same table `expected_priority` walks. A test checks that every rule line is in the prompt and that the grader uses that table.
 - Reports count `priority_ok` separately from the overall pass rate. When a dimension depends on rules that are not in the prompt, the report says so and withholds the blended pass rate. That rate is not a live quality number.
 - A cassette of representative raw responses checks the live contract: schema, category, queue, and one `route_ticket` can pass while priority fails, and that split is not harmful.
-- Documented the 2026-10-17 self-compare: priority 37/63 (58.7%) because the rules were missing, contract 63/63, harmful 0/63. Re-verification of the fix is pending. The cost estimate ignores cached tokens (real US$0.053 versus an estimate of about US$0.100).
+- Documented the 2026-10-17 self-compare: priority 37/63 (58.7%) because the rules were missing, contract 63/63, harmful 0/63. That priority figure is historical. The cost estimate ignores cached tokens (real US$0.053 versus an estimate of about US$0.100).
+- A later `compare-live --runs 1` the same day, `grok-4.20-0309-non-reasoning` on both sides, measured pass 55/63 old and 56/63 new, and priority_ok 56 and 57. It is a self-compare. 29/63 raw responses were identical. The gap is not evidence of improvement or regression. Real cost about US$0.053 per run; the repo estimate of about US$0.100 ignores cached tokens.
 
 ## 0.2.1 - 2026-10-17
 

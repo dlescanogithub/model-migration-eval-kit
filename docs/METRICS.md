@@ -20,7 +20,7 @@ Command for the comparison numbers: `python -m migration_eval compare --old fake
 
 Labels and the scripted replies come from `src/migration_eval/spec.py`. The pass rates show that the grader and the gate run. They do not measure model quality. `fake-new` is written to miss the hard edge tickets, so the NO_GO demonstrates the gate.
 
-`old` and `new` with the same model is a self-compare, not a migration. Differences between sides are sampling noise. On the third live verification, 2026-10-17, `compare-live --runs 1`, 29/63 raw responses were identical across sides; the rest differed by model variation. McNemar and GO/NO_GO from that self-compare are not evidence of anything. That sentence does not replace the scripted numbers in the table above.
+`old` and `new` with the same model is a self-compare, not a migration. Differences between sides are sampling noise. The 2026-10-17 priority result of 37/63 (58.7%) is historical: those rules were absent from the prompt, and that is corrected. The later run the same day, `compare-live --runs 1`, model `grok-4.20-0309-non-reasoning` on both sides, measured pass 55/63 old and 56/63 new, and `priority_ok` 56 and 57. It was an independent check after the fix. 29/63 raw responses were identical across sides; the rest differed by model variation. That gap is not evidence of improvement or regression. McNemar and GO/NO_GO from that self-compare are not evidence of anything. These live figures do not replace the scripted numbers in the table above.
 
 Seed repeats on the fakes change simulated latency only. The p-value and the bootstrap intervals above are identical for `--runs 1` and `--runs 10`. A test locks that.
 
