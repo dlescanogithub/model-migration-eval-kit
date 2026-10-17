@@ -1,0 +1,5 @@
+# Synthetic canary. Nothing here talks to a live router.
+split: 0.1
+repeats: 3
+max_fail_rate_delta: 0.05
+rollback_on_harmful: true

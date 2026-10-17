@@ -1,0 +1,12 @@
+# Go / no-go policy for a model swap. Thresholds are configuration, not measurements.
+# A human still has to approve any GO. The tool never changes a live system.
+
+max_slice_drop_points: 5
+adversarial_must_not_regress: true
+min_cost_savings_ratio: 0.20
+max_p95_latency_ms: 1000
+max_format_failure_rate: 0.05
+max_tool_failure_rate: 0.01
+alpha: 0.05
+min_pass_rate: 0.99
+max_cost_per_run_usd: 1.0
