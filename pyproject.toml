@@ -57,6 +57,7 @@ extra_checks = true
 [tool.pytest.ini_options]
 addopts = "--cov=migration_eval --cov-fail-under=80 --cov-report=term-missing"
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.coverage.run]
 branch = true
