@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "model-migration-eval-kit"
+version = "0.1.0"
+description = "Decide whether to migrate or deprecate an LLM using a synthetic ticket-triage golden set, invariant checks, and a go/no-go policy."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Diego Lescano" }]
+keywords = ["evals", "llm", "migration", "golden-set"]
+dependencies = ["PyYAML>=6"]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.11",
+  "pre-commit>=3",
+  "pytest>=8",
+  "pytest-cov>=5",
+  "ruff>=0.6",
+  "types-PyYAML",
+]
+
+[project.scripts]
+migration-eval = "migration_eval.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+packages = ["migration_eval"]
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+extra_checks = true
+
+[tool.pytest.ini_options]
+addopts = "--cov=migration_eval --cov-fail-under=80 --cov-report=term-missing"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["migration_eval"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+]

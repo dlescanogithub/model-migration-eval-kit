@@ -1,0 +1,10 @@
+model-migration-eval-kit
+
+Copyright (c) 2026 Diego Lescano
+
+The eval-kit ideas named in the task brief (invariant checks, cassette replay,
+a fake provider, JSONL traces, JSON logging, a secret scan) were reimplemented
+in this repository. The private reference checkout was not readable from the
+environment that built this tree, so no source file was copied from it.
+
+See docs/PROVENANCE.md.
