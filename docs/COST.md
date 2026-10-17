@@ -31,10 +31,13 @@ The live cost this repo computes is input tokens times the input rate plus outpu
 
 `compare-live` with the same model name on both sides is a self-compare. It exercises the harness. It is not a migration from one model to another. Differences between sides are sampling noise, so McNemar and GO/NO_GO on that pair are not evidence of anything.
 
-The first live run, 2026-10-17, `compare-live --runs 1`, same model on both sides, 63 tickets, cost about US$0.053. The harness estimate for that run was about US$0.100, because cached tokens are ignored. The third verification the same day, same command, is recorded as migration OK: 29/63 raw responses were identical across sides, and the rest differed by model variation. This file does not add a new live pass rate.
+The first live run, 2026-10-17, `compare-live --runs 1`, same model on both sides, 63 tickets, is historical: priority 37/63 (58.7%) because those rules were absent from the prompt. That is corrected. Cost about US$0.053. The harness estimate for that run was about US$0.100, because cached tokens are ignored.
+
+The later run the same day, same command, model `grok-4.20-0309-non-reasoning` on both sides, is an independent check after the fix. Pass 55/63 old and 56/63 new. `priority_ok` 56 and 57. Real cost about US$0.053 per run. The repo estimate, about US$0.100, ignores cached tokens. It is a self-compare, not a migration. 29/63 raw responses were identical across sides; the rest differed by model variation. The old/new gap is not evidence of improvement or regression.
 
 | Date | Command | Sides | Spend | Notes |
 | --- | --- | --- | --- | --- |
-| 2026-10-17 | `python -m migration_eval compare-live --runs 1` | same model both sides | real US$0.053; estimate ~US$0.100 | Self-compare. Cached tokens ignored by the estimate. Also requires `LIVE_MODE=1` and the variables in `.env.example`. Cassettes go to gitignored `var/cassettes/`. |
+| 2026-10-17 | `python -m migration_eval compare-live --runs 1` | same model both sides | real US$0.053; estimate ~US$0.100 | Historical self-compare. Priority rules were absent from the prompt. Corrected. Cached tokens ignored by the estimate. Also requires `LIVE_MODE=1` and the variables in `.env.example`. Cassettes go to gitignored `var/cassettes/`. |
+| 2026-10-17 | `python -m migration_eval compare-live --runs 1` | `grok-4.20-0309-non-reasoning` both sides | real ~US$0.053 per run; estimate ~US$0.100 | After the fix. Auto-compare. Pass 55/63 old and 56/63 new is in the README. Not evidence of a migration. Cached tokens ignored by the estimate. |
 
 The command exits 2 when any of those variables is missing, and it does not send a request. CI does not set `LIVE_MODE`.
