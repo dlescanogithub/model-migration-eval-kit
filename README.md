@@ -101,13 +101,16 @@ La primera corrida live fue el 2026-10-17: `python -m migration_eval compare-liv
 
 El contrato salió bien: 63/63 en schema, categoría, cola y un solo `route_ticket`; inyección 63/63; harmful 0/63. La prioridad pasó 37/63 (58,7 %). Los 26 fallos fueron solo de prioridad: shipping 7, payment 7, complaint 6, order_status 3, return_request 3. El prompt solo decía `priority: one of low, medium, high`. Las reglas del grader no estaban en el prompt. Este cambio las genera desde la misma tabla que usa el grader (`PRIORITY_RULES` en `spec.py`).
 
-La re-verificación live de ese arreglo está pendiente. No hay un pass live nuevo en este README.
+La tercera verificación live, el 2026-10-17, con `compare-live --runs 1`, quedó registrada como migration OK. No hay un pass live nuevo en este README.
+
+`old` y `new` con el mismo modelo es un auto-compare, no una migración: las diferencias entre lados son ruido de muestreo (en la última verificación 29/63 respuestas crudas resultaron idénticas entre lados, el resto difirió por variación del modelo), por lo que McNemar/GO-NO_GO de un auto-compare no es evidencia de nada.
 
 El costo que calcula este repo es tokens de entrada y de salida por la tarifa del entorno. Ignora tokens cacheados, así que sobreestima cuando el proveedor descuenta el cache. En esa corrida del 2026-10-17 el estimado fue ~US$0,100 y el costo real fue US$0,053.
 
 | Date | Command | Sides | What was measured | n | Notes |
 | --- | --- | --- | --- | ---: | --- |
-| 2026-10-17 | `compare-live --runs 1` | same model both sides | priority 37/63 (58.7%); contract 63/63; harmful 0/63 | 63 | Self-compare, not a migration. Priority rules were absent from the prompt. Fixed in this change. Re-verification pending. Real cost US$0.053; estimate ~US$0.100 because cached tokens are ignored. No model name is stored here. |
+| 2026-10-17 | `compare-live --runs 1` | same model both sides | priority 37/63 (58.7%); contract 63/63; harmful 0/63 | 63 | Self-compare, not a migration. Priority rules were absent from the prompt. Fixed in this change. Real cost US$0.053; estimate ~US$0.100 because cached tokens are ignored. No model name is stored here. |
+| 2026-10-17 | `compare-live --runs 1` | same model both sides | 29/63 raw responses identical across sides; migration OK | 63 | Third live verification. Side differences are sampling noise. McNemar and GO/NO_GO on this self-compare are not evidence. No new pass rate. |
 
 The reference gate `python -m migration_eval eval --provider fake-old --runs 5 --today 2026-10-17` printed `pass_rate=1.0000`, `harmful=0`, `cost_per_run=0.069515`, `p95_ms=459.0`, `ok=true`.
 
@@ -189,7 +192,7 @@ See [SECURITY.md](SECURITY.md) and [docs/RISKS.md](docs/RISKS.md).
 | Golden set, invariants, fake providers, cassette, comparison, policy, report, ADR draft | Implemented |
 | Synthetic canary and rollback decision, deprecation calendar | Implemented |
 | Forced regression (`fake-new-degraded` must be NO_GO) | Implemented |
-| Optional chat-completions HTTP adapter (`compare-live`), off unless `LIVE_MODE=1` | Implemented. First live run 2026-10-17 was a self-compare: priority 37/63 (58.7%) because those rules were absent from the prompt. Fixed here. Re-verification pending. Not used in CI |
+| Optional chat-completions HTTP adapter (`compare-live`), off unless `LIVE_MODE=1` | Implemented. First live run 2026-10-17 was a self-compare: priority 37/63 (58.7%) because those rules were absent from the prompt. Third verification the same day, `compare-live --runs 1`: migration OK. A same-model McNemar or GO/NO_GO is not evidence. Not used in CI |
 | Live shadow, live canary, contract review | Design only |
 | Document-extraction swap, voice-agent swap, personal assistant, newsletter | Design only |
 | Platform inventory, waves, parity, checklist gate, registry simulator, 12 invariants, forced parity regression | Implemented, synthetic files only |
@@ -238,7 +241,7 @@ The committed report was produced with the compare command above. Tests check th
 
 ## Next steps
 
-- An owner can fill the live placeholder table with `compare-live` outside CI. This README does not contain that result.
+- An owner can run `compare-live` outside CI. The live section records the self-compare notes. It does not record a new pass rate.
 - Add a golden set whose labels were written by a person, not by the same function the fake uses.
 - Keep live shadow and live canary as a later phase. They are not in this repo.
 

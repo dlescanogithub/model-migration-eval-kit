@@ -17,5 +17,6 @@ Owners below are roles in the fictional exercise, not a staff list.
 | Rollback exists only on paper | Certain for production: there is no live switch | A bad GO cannot be undone by this repo | RUNBOOK says the human holds the real switch; this repo only writes an audit | Platform |
 | Secret committed | Low if the scan and review hold | Key in git history | `secretscan` in CI; `.env` gitignored | Harness owner |
 | Thresholds gamed (cap raised until the report is green) | Medium | Meaningless GO | Threshold changes belong in an ADR, not in a quiet edit the day of the decision | Deployment strategist |
+| `old` and `new` are the same model, and the report is read as a migration | High if that GO or NO_GO is forwarded | Sampling noise looks like a model change | On 2026-10-17, `compare-live --runs 1`, 29/63 raw responses were identical across sides; the rest differed by model variation. McNemar and GO/NO_GO on that self-compare are not evidence of anything | Harness owner |
 
 Legal review of a vendor contract is not done here. The versioning row is the reminder to do it before any real cutoff.
