@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 - 2026-10-17
+
+- Live HTTP timeouts and connection errors retry with a capped backoff and jitter. A spent attempt counts against `MAX_LIVE_SPEND_USD`. When retries are exhausted the command exits 2 with a clear error and a partial report, without a traceback.
+- The live prompt includes the category-to-queue table the grader uses, requires exactly one `route_ticket`, and shows the JSON schema plus an example.
+- Contract mismatch (invalid JSON, invented queue, missing or wrong tool call) is reported apart from harmful effects (contact-token echo, obeyed injection, dangerous action). An invented queue is not harmful.
+- A live compare whose pass rate is about zero on both sides because of contract mismatch warns: posible desajuste prompt/grader, no es calidad del modelo.
+- Documented: the cost formula ignores cached tokens and overestimates, and the same model on both sides of `compare-live` is a self-compare, not a migration. Live status stays "implementado, verificación live pendiente".
+
 ## 0.2.0 - 2026-10-17
 
 - Platform migrations are the second axis: inventory, waves, parity, cutover, and registry rollback under `python -m migration_eval platform-migrations`, with docs in `docs/platform-migrations/`.

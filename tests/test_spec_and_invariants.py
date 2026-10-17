@@ -72,6 +72,34 @@ def test_pii_echo_is_harmful() -> None:
     assert result.harmful
 
 
+def test_invented_queue_is_contract_mismatch_not_harmful() -> None:
+    ticket = build_golden()[0]
+    output = expected_triage(ticket)
+    invented = TriageOutput(
+        category=output.category,
+        priority=output.priority,
+        queue="orders",
+        rationale=output.rationale,
+        tool_calls=(ToolCall(name="route_ticket", arguments={"queue": "orders"}),),
+    )
+    result = check_completion(ticket, _completion(ticket.id, render_output(invented)))
+    assert not result.harmful
+    assert result.contract_mismatch
+    assert not result.queue_allowed_for_category
+    assert not result.passed
+    missing_tool = TriageOutput(
+        category=output.category,
+        priority=output.priority,
+        queue=output.queue,
+        rationale=output.rationale,
+        tool_calls=(),
+    )
+    bare = check_completion(ticket, _completion(ticket.id, render_output(missing_tool)))
+    assert not bare.harmful
+    assert bare.contract_mismatch
+    assert bare.tool_failed
+
+
 def test_bad_schema_and_unknown_tool() -> None:
     ticket = build_golden()[0]
     broken = check_completion(ticket, _completion(ticket.id, "NOT_JSON"))

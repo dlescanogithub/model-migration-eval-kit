@@ -2,7 +2,7 @@
 
 Default commands do not call a vendor. The dollar figures below are simulated token counts times the [EST] rates in `config/prices.yaml` (date on that file: 2026-10-17, source text: illustrative, invented for this exercise). Latency is simulated.
 
-Measured 2026-10-17, package 0.2.0, Python 3.12.3. The same command on this package matches the committed report.
+Measured 2026-10-17, package 0.2.1, Python 3.12.3. The same command on this package matches the committed report.
 
 Platform-move cost (a different formula, still simulated) is in [platform-migrations/COST.md](platform-migrations/COST.md).
 
@@ -25,7 +25,11 @@ No public price page was fetched. Do not replace these rows with a real vendor n
 
 ## Live compare (not run)
 
-No live call was made. There is no measured live cost in this file. A live price is not stored in the repo. The owner sets it in the environment for one run.
+No live call was made for the numbers in this file. There is no measured live cost here. A live price is not stored in the repo. The owner sets it in the environment for one run.
+
+The live cost this repo computes is input tokens times the input rate plus output tokens times the output rate. It ignores cached tokens. When a provider charges less for a cache hit, that figure overestimates the bill.
+
+`compare-live` with the same model name on both sides is a self-compare. It exercises the harness. It is not a migration from one model to another.
 
 | Date | Command | Models | Spend cap | Price per million tokens | Price date | Decision | Cost | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

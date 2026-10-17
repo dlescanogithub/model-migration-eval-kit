@@ -10,7 +10,7 @@ The harness answers a narrower question: on this frozen task, does the new provi
 
 ## Measured simulated cost (not a bill)
 
-Measured 2026-10-17, package 0.2.0, Python 3.12.3. The same command on this package matches the committed report.
+Measured 2026-10-17, package 0.2.1, Python 3.12.3. The same command on this package matches the committed report.
 
 Command: `python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17`
 
