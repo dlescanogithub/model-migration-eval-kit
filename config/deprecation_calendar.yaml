@@ -1,0 +1,26 @@
+# Illustrative cutover calendar for the fictional shop Casa Brisa.
+# Dates are injected at check time via --today. They are not a real contract.
+name: casa-brisa-model-cutover
+warn_within_days: 14
+items:
+  - id: shadow-review
+    description: A human reads the comparison report before any canary plan.
+    due: "2026-10-24"
+    owner: deployment-strategist
+    required: true
+  - id: canary-plan-approved
+    description: Support lead accepts the synthetic rollback criteria as the plan to rehearse.
+    due: "2026-11-15"
+    owner: support-lead
+    required: true
+  - id: vendor-cutoff
+    description: Illustrative date after which the old model id would be retired. Not a real contract.
+    due: "2026-11-30"
+    owner: finance-partner
+    required: true
+    kind: cutoff
+  - id: decommission-old
+    description: Remove the old provider from the routing table only after the canary held.
+    due: "2026-12-15"
+    owner: platform
+    required: true

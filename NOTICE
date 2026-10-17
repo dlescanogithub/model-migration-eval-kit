@@ -1,0 +1,13 @@
+model-migration-eval-kit
+
+Copyright (c) 2026 Diego Lescano
+
+Shared utilities in this repository — cassette replay, invariant checks, JSON
+traces, structured logging, and the secret scanner — are small vendored helpers.
+The same helpers are maintained in parallel across the portfolio repositories
+and kept aligned. The ticket-triage golden set, the go/no-go policy, the canary
+simulator, and the deprecation calendar belong to this repository.
+
+Nothing in this tree is copied from employer or client work.
+
+See docs/PROVENANCE.md.

@@ -1,0 +1,83 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Types
+        run: mypy
+      - name: Tests
+        run: pytest
+      - name: Eval gate
+        run: python -m migration_eval eval --provider fake-old --runs 3 --today 2026-10-17
+      - name: Forced regression must fail
+        run: |
+          set +e
+          python -m migration_eval eval-regression --runs 3 --today 2026-10-17 --out /tmp/regression
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "expected eval-regression to exit non-zero"
+            exit 1
+          fi
+          python - << 'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("/tmp/regression/report.json").read_text(encoding="utf-8"))
+          if report.get("decision") != "NO_GO":
+              raise SystemExit(f"expected NO_GO, got {report.get('decision')}")
+          print("regression gate went red with NO_GO")
+          PY
+      - name: Platform eval gate
+        run: |
+          python -m migration_eval platform-migrations eval > /tmp/platform-eval.json
+          python - << 'PY'
+          import json
+          from pathlib import Path
+          rows = json.loads(Path("/tmp/platform-eval.json").read_text(encoding="utf-8"))
+          failed = [row["name"] for row in rows if not row["passed"]]
+          if len(rows) != 12 or failed:
+              raise SystemExit(f"expected 12 passing platform invariants, got {len(rows)} failed={failed}")
+          print("platform eval 12/12")
+          PY
+      - name: Platform forced regression must fail
+        run: |
+          set +e
+          python -m migration_eval platform-migrations eval-regression > /tmp/platform-regression.json
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "expected platform eval-regression to exit non-zero"
+            exit 1
+          fi
+          python - << 'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("/tmp/platform-regression.json").read_text(encoding="utf-8"))
+          if report.get("verdict") != "FAIL" or report.get("gate_went_red") is not True:
+              raise SystemExit(f"expected FAIL and gate_went_red, got {report}")
+          print("platform regression gate went red with FAIL")
+          PY
+      - name: Secret scan
+        run: python -m migration_eval secretscan .

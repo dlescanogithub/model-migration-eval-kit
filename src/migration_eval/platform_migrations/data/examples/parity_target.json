@@ -1,0 +1,12 @@
+{
+  "rows": [
+    {"traveler_id": "t01", "trips_90d": 1.0, "fare_avg": 80.0},
+    {"traveler_id": "t02", "trips_90d": 2.0, "fare_avg": 90.0},
+    {"traveler_id": "t03", "trips_90d": 3.0, "fare_avg": 100.0},
+    {"traveler_id": "t04", "trips_90d": 4.0, "fare_avg": 110.0},
+    {"traveler_id": "t05", "trips_90d": 1.0, "fare_avg": 120.0},
+    {"traveler_id": "t06", "trips_90d": 2.0, "fare_avg": 80.0},
+    {"traveler_id": "t07", "trips_90d": 3.0, "fare_avg": 90.0},
+    {"traveler_id": "t08", "trips_90d": 4.0, "fare_avg": 100.0}
+  ]
+}

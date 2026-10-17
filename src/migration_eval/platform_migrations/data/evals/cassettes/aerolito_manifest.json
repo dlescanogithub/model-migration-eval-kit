@@ -1,0 +1,15 @@
+{
+  "name": "aerolito-inventory",
+  "interactions": [
+    {
+      "operation": "get_manifest_summary",
+      "request": {"platform_id": "aerolito-legacy"},
+      "response": {
+        "platform_name": "aerolito-legacy",
+        "datasets": 4,
+        "jobs": 4,
+        "models": 1
+      }
+    }
+  ]
+}

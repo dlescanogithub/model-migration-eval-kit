@@ -1,0 +1,35 @@
+# Illustrative prices for the scripted providers in this repo.
+# They are not vendor quotes. Every figure is [EST].
+currency: USD
+note: "[EST] illustrative simulated prices invented for the Casa Brisa exercise. Not a vendor quote."
+models:
+  fake-old:
+    provider: simulated
+    usd_per_1k_input: 0.005
+    usd_per_1k_output: 0.015
+    source: "[EST] illustrative, invented for this exercise"
+    price_date: "2026-10-17"
+  fake-new:
+    provider: simulated
+    usd_per_1k_input: 0.001
+    usd_per_1k_output: 0.003
+    source: "[EST] illustrative, invented for this exercise"
+    price_date: "2026-10-17"
+  fake-new-degraded:
+    provider: simulated
+    usd_per_1k_input: 0.001
+    usd_per_1k_output: 0.003
+    source: "[EST] illustrative, invented for this exercise"
+    price_date: "2026-10-17"
+  fake-new-close:
+    provider: simulated
+    usd_per_1k_input: 0.001
+    usd_per_1k_output: 0.003
+    source: "[EST] illustrative, invented for this exercise"
+    price_date: "2026-10-17"
+  fake-new-flat:
+    provider: simulated
+    usd_per_1k_input: 0.005
+    usd_per_1k_output: 0.015
+    source: "[EST] illustrative, same invented rates as fake-old so savings are zero"
+    price_date: "2026-10-17"

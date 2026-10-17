@@ -1,0 +1,23 @@
+{
+  "models": [
+    {
+      "name": "churn_scorer",
+      "versions": [
+        {
+          "version": 3,
+          "stage": "Production",
+          "aliases": ["champion"],
+          "run_id": "run-synthetic-3",
+          "description": "Synthetic Aerolito churn scorer"
+        },
+        {
+          "version": 4,
+          "stage": "Staging",
+          "aliases": ["candidate"],
+          "run_id": "run-synthetic-4",
+          "description": "Synthetic Aerolito churn candidate"
+        }
+      ]
+    }
+  ]
+}
