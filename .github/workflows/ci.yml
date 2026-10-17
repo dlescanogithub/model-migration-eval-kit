@@ -49,5 +49,35 @@ jobs:
               raise SystemExit(f"expected NO_GO, got {report.get('decision')}")
           print("regression gate went red with NO_GO")
           PY
+      - name: Platform eval gate
+        run: |
+          python -m migration_eval platform-migrations eval > /tmp/platform-eval.json
+          python - << 'PY'
+          import json
+          from pathlib import Path
+          rows = json.loads(Path("/tmp/platform-eval.json").read_text(encoding="utf-8"))
+          failed = [row["name"] for row in rows if not row["passed"]]
+          if len(rows) != 12 or failed:
+              raise SystemExit(f"expected 12 passing platform invariants, got {len(rows)} failed={failed}")
+          print("platform eval 12/12")
+          PY
+      - name: Platform forced regression must fail
+        run: |
+          set +e
+          python -m migration_eval platform-migrations eval-regression > /tmp/platform-regression.json
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "expected platform eval-regression to exit non-zero"
+            exit 1
+          fi
+          python - << 'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("/tmp/platform-regression.json").read_text(encoding="utf-8"))
+          if report.get("verdict") != "FAIL" or report.get("gate_went_red") is not True:
+              raise SystemExit(f"expected FAIL and gate_went_red, got {report}")
+          print("platform regression gate went red with FAIL")
+          PY
       - name: Secret scan
         run: python -m migration_eval secretscan .

@@ -1,0 +1,54 @@
+# Synthetic cutover checklist for the fictional Aerolito Data team.
+parity_verdict: PASS
+parity_approved_by: null
+rollback_plan_present: true
+open_high_risks: 0
+controls:
+  - id: inventory.complete
+    title: Inventory covers the in-scope synthetic assets
+    required: true
+    status: pass
+    approver: null
+    evidence: examples/aerolito_manifest.yaml
+  - id: owners.assigned
+    title: Every asset has a team owner
+    required: true
+    status: pass
+    approver: null
+    evidence: owners listed on the manifest
+  - id: sensitivity.classified
+    title: Sensitivity is set on every dataset
+    required: true
+    status: pass
+    approver: null
+    evidence: scanner accepted sensitivity values
+  - id: lineage.reviewed
+    title: Lineage plan is complete
+    required: true
+    status: pass
+    approver: null
+    evidence: wave planner reports a complete plan
+  - id: parity.accepted
+    title: Parity verdict is accepted
+    required: true
+    status: pass
+    approver: null
+    evidence: identical synthetic tables
+  - id: rollback.documented
+    title: Rollback log is part of the registry simulator
+    required: true
+    status: pass
+    approver: null
+    evidence: docs/RUNBOOK.md
+  - id: security.reviewed
+    title: No live credentials are required
+    required: true
+    status: pass
+    approver: null
+    evidence: SECURITY.md
+  - id: hypercare.named
+    title: A fictional hypercare owner is named in the RACI
+    required: true
+    status: pass
+    approver: null
+    evidence: playbook/raci.md

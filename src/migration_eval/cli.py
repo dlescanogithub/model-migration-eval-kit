@@ -18,6 +18,7 @@ from migration_eval.golden import build_golden, dump_golden, load_golden
 from migration_eval.logging_setup import configure_logging, log_event
 from migration_eval.models import Ticket
 from migration_eval.paths import repo_root
+from migration_eval.platform_migrations.cli import main as platform_main
 from migration_eval.policy import load_policy
 from migration_eval.prices import load_prices
 from migration_eval.providers.factory import build_provider
@@ -113,6 +114,13 @@ def build_parser() -> argparse.ArgumentParser:
     golden = sub.add_parser("build-golden", help="rewrite data/golden_tickets.json from the generator")
     golden.add_argument("--out", type=Path, default=None)
     golden.set_defaults(func=cmd_build_golden)
+
+    platform = sub.add_parser(
+        "platform-migrations",
+        help="inventory, waves, parity, registry rollback, and the cutover gate",
+    )
+    platform.add_argument("argv", nargs=argparse.REMAINDER)
+    platform.set_defaults(func=cmd_platform)
 
     return parser
 
@@ -296,6 +304,11 @@ def cmd_secretscan(args: argparse.Namespace) -> int:
     for finding in findings:
         print(finding.format())
     return 1
+
+
+def cmd_platform(args: argparse.Namespace) -> int:
+    argv = [item for item in args.argv if item != "--"]
+    return platform_main(argv)
 
 
 def cmd_build_golden(args: argparse.Namespace) -> int:

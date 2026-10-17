@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 - 2026-10-17
+
+- Platform migrations are the second axis: inventory, waves, parity, cutover, and registry rollback under `python -m migration_eval platform-migrations`, with docs in `docs/platform-migrations/`.
+- Twelve platform invariants and a forced parity regression (exit 1, `gate_went_red` true) run beside the model evals.
+- Secret scan, evalkit, logging, retries, and the JSON trace stay one copy. The operation cassette and the invariant runner live in `migration_eval.evalkit`.
+
 ## 0.1.1 - 2026-10-17
 
 - The paired test now uses the ticket as the unit. Seed repeats collapse before McNemar and before the bootstrap, and n is reported. Extra repeats do not change the p-value or the intervals.

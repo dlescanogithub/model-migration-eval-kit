@@ -2,9 +2,17 @@
 
 from __future__ import annotations
 
+import os
 import socket
 
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def _clear_platform_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for key in list(os.environ):
+        if key.startswith("MLMIG_") or key.startswith("MIGRATION_EVAL_PLATFORM_"):
+            monkeypatch.delenv(key, raising=False)
 
 
 @pytest.fixture(autouse=True)

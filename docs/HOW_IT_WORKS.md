@@ -10,7 +10,7 @@ El papelito es el texto del ticket. El cliente puede escribir cualquier cosa. El
 
 ## Qué está medido acá
 
-Los dos "hornos" de la demo son simuladores con nombre: `fake-old` y `fake-new`. No son modelos de un proveedor. El resultado medido el 2026-10-17, paquete 0.1.1, con `python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17`, es NO_GO: la tanda difícil (slice edge, n=21) baja 33.33 puntos y el tope configurado es 5. Ese NO_GO está escrito en `fake-new` a propósito, para mostrar que la compuerta dispara. No es una diferencia entre dos modelos reales. Las etiquetas salen del mismo spec que los fakes (`spec.py`): los números muestran que la maquinaria corre, no la calidad de un modelo. Los precios de esa cuenta son ilustrativos, marcados [EST]. La latencia dice "simulated".
+Los dos "hornos" de la demo son simuladores con nombre: `fake-old` y `fake-new`. No son modelos de un proveedor. El resultado medido el 2026-10-17, paquete 0.2.0, con `python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17`, es NO_GO: la tanda difícil (slice edge, n=21) baja 33.33 puntos y el tope configurado es 5. Ese NO_GO está escrito en `fake-new` a propósito, para mostrar que la compuerta dispara. No es una diferencia entre dos modelos reales. Las etiquetas salen del mismo spec que los fakes (`spec.py`): los números muestran que la maquinaria corre, no la calidad de un modelo. Los precios de esa cuenta son ilustrativos, marcados [EST]. La latencia dice "simulated".
 
 ## Paso a paso
 
@@ -37,6 +37,10 @@ Los dos "hornos" de la demo son simuladores con nombre: `fake-old` y `fake-new`.
 | Cassette | Archivo que guarda una respuesta y la vuelve a servir. Si falta la fila, no sale a internet |
 | [EST] | Número ilustrativo, no medido en una factura real |
 | Simulated | Latencia o tokens inventados por el simulador, con una regla explícita |
+
+## El otro eje: mudanza de plataforma
+
+Lo de arriba compara dos modelos sobre los mismos tickets. El segundo eje es mover la plataforma: inventario, olas, paridad, cutover y rollback, sobre un equipo de analítica inventado (Aerolito Data). El relato en castellano está en [platform-migrations/HOW_IT_WORKS.md](platform-migrations/HOW_IT_WORKS.md). El índice del capítulo es [platform-migrations/README.md](platform-migrations/README.md). El comando es `python -m migration_eval platform-migrations`. La ilustración de plata de ese capítulo es negativa y usa datos ficticios.
 
 ## Límites, en serio
 

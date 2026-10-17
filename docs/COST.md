@@ -2,7 +2,9 @@
 
 Default commands do not call a vendor. The dollar figures below are simulated token counts times the [EST] rates in `config/prices.yaml` (date on that file: 2026-10-17, source text: illustrative, invented for this exercise). Latency is simulated.
 
-Measured 2026-10-17, package 0.1.1, Python 3.12.3.
+Measured 2026-10-17, package 0.2.0, Python 3.12.3. The same command on this package matches the committed report.
+
+Platform-move cost (a different formula, still simulated) is in [platform-migrations/COST.md](platform-migrations/COST.md).
 
 Command shape: `python -m migration_eval compare --old fake-old --new <name> --runs 10 --today 2026-10-17`
 

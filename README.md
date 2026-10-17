@@ -6,7 +6,7 @@ Offline check for a fictional shop, Casa Brisa: same 63 synthetic tickets, two s
 
 Swapping a model because the new one is cheaper can hide a bad slice. This repo runs one golden set on an old and a new provider and refuses the swap when a configured slice drops too far, when the adversarial slice gets worse, or when a paired test says the extra failures are not a coin flip.
 
-Measured on 2026-10-17, package 0.1.1, Python 3.12.3. Command:
+Measured on 2026-10-17, package 0.2.0, Python 3.12.3. Command:
 
 ```text
 python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17
@@ -61,9 +61,15 @@ flowchart LR
 
 Detail: [docs/architecture.md](docs/architecture.md).
 
+## Platform migrations
+
+The second axis is the platform, after the model. Inventory, waves, parity, cutover, and registry rollback run on a fictional analytics group, Aerolito Data. The chapter is [docs/platform-migrations/README.md](docs/platform-migrations/README.md). The command is `python -m migration_eval platform-migrations`. The money illustration in that chapter is negative and uses fictional inputs. It is not a client invoice.
+
+Measured on 2026-10-17, package 0.2.0, Python 3.12.3: `platform-migrations eval` exited 0 with 12/12 invariants, and `platform-migrations eval-regression` exited 1 with verdict FAIL and `gate_went_red` true. `platform-migrations demo` on the Aerolito fixtures reported 6 waves, parity PASS, gate READY, and a simulated dual-run cost of 280 from the [EST] inputs in [docs/platform-migrations/COST.md](docs/platform-migrations/COST.md).
+
 ## Results
 
-Measured 2026-10-17, package 0.1.1, Python 3.12.3, command in the Problem section, 10 seed repeats collapsed to n=63 tickets. Source file: [docs/example-report.md](docs/example-report.md).
+Measured 2026-10-17, package 0.2.0, Python 3.12.3, command in the Problem section, 10 seed repeats collapsed to n=63 tickets. Re-run on this package matched the committed report. Source file: [docs/example-report.md](docs/example-report.md).
 
 | Slice | n | Old pass rate | New pass rate | Drop (points) | Bootstrap 95% (new - old) |
 | --- | ---: | ---: | ---: | ---: | --- |
@@ -108,6 +114,7 @@ Client-style cases use the fictional shop Casa Brisa or a described pattern. The
 | Use case | Status | Problem | Who approves | Gated effects | How this repo handles it |
 | --- | --- | --- | --- | --- | --- |
 | Ticket triage model migration for Casa Brisa | Implemented | A cheaper model may mis-prioritise edge tickets or obey text inside the ticket | A human. The tool only recommends GO, NO_GO, or NEED_HUMAN | Category, priority, queue, and the only allowed tool `route_ticket`. No email, no refund, no external send | Golden set, invariant checks, comparison report, policy, synthetic canary, deprecation calendar |
+| Platform move for Aerolito Data (fictional) | Implemented as a local rehearsal | A cutover without lineage or parity can ship a silent table change, or leave two scores live | A human. The gate returns READY, NOT_READY, or NEED_HUMAN and does not flip an application flag | Wave order, parity verdict, registry copy, rollback snapshot. No catalog write and no scheduler change | Manifest scan, wave planner, parity checker, registry simulator, checklist gate. See [docs/platform-migrations/README.md](docs/platform-migrations/README.md) |
 | Document-extraction model swap | Design only | A new model may drop fields or invent values on scanned forms | A human reviewer per batch, plus the same policy owner | Writes into a store of extracted fields. No payment and no customer message | Not built. The same report shape would score field presence and "no invented id", not exact strings |
 | Voice-agent LLM swap | Design only | A cheaper model may skip a required disclosure or transfer to the wrong queue | A human who owns the call flow | Spoken reply and transfer target. No account change during the trial | Not built. Would need audio fixtures and a disclosure invariant. See the design note in docs/SCOPE.md |
 
@@ -129,6 +136,8 @@ Client-style cases use the fictional shop Casa Brisa or a described pattern. The
 | Forced red gate | `make eval-regression` must exit non-zero. CI asserts that |
 | Secret scan | [src/migration_eval/secretscan.py](src/migration_eval/secretscan.py), CI job `Secret scan` |
 | Live provider off | [src/migration_eval/providers/openai_compat.py](src/migration_eval/providers/openai_compat.py). `LIVE_MODE` defaults to off. CI does not set it |
+| Platform wave order, parity, and registry rollback | [docs/platform-migrations/](docs/platform-migrations/). `platform-migrations eval-regression` must exit non-zero. CI asserts that |
+| Platform real provider off | `MLMIG_PROVIDER` defaults to `fake`. `real` and cassette recording raise before any socket |
 
 Not covered yet:
 
@@ -177,6 +186,8 @@ See [SECURITY.md](SECURITY.md) and [docs/RISKS.md](docs/RISKS.md).
 | Optional chat-completions HTTP adapter (`compare-live`), off unless `LIVE_MODE=1` | Implemented, not used in CI, no live result recorded |
 | Live shadow, live canary, contract review | Design only |
 | Document-extraction swap, voice-agent swap, personal assistant, newsletter | Design only |
+| Platform inventory, waves, parity, checklist gate, registry simulator, 12 invariants, forced parity regression | Implemented, synthetic files only |
+| Platform catalog write, scheduler cutover, table restore on a lakehouse | Design only |
 
 ## How to reproduce
 
@@ -194,9 +205,11 @@ python -m migration_eval canary --old fake-old --new fake-new --today 2026-10-17
 python -m migration_eval deprecation-check --today 2026-10-17
 python -m migration_eval secretscan .
 python -m migration_eval secretscan --check-hash
+python -m migration_eval platform-migrations eval
+python -m migration_eval platform-migrations demo --out out/platform-demo
 ```
 
-`make setup`, `make lint`, `make test`, `make eval`, `make demo`, `make secretscan`, and `make secretscan-hash` wrap those commands. `make eval-regression` is expected to exit non-zero.
+`make setup`, `make lint`, `make test`, `make eval`, `make demo`, `make secretscan`, and `make secretscan-hash` wrap those commands. `make eval-regression` and `make platform-eval-regression` are expected to exit non-zero. `make platform-eval` and `make platform-demo` cover the platform chapter.
 
 Optional live compare, not used above and not run for the tables in this file. It needs `LIVE_MODE=1`, a base URL, an API key, two model names, a spend cap, and a price per million tokens with a price date. The same rate is applied to both models. No price for this mode is stored in the repo. If any of those are missing, the command exits 2 and does not send a request.
 
@@ -226,6 +239,7 @@ The committed report was produced with the compare command above. Tests check th
 ## Docs
 
 - [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) — walkthrough in rioplatense Spanish
+- [docs/platform-migrations/README.md](docs/platform-migrations/README.md) — platform chapter (inventory, waves, parity, cutover, rollback)
 - [docs/BUSINESS_CASE.md](docs/BUSINESS_CASE.md)
 - [docs/DISCOVERY.md](docs/DISCOVERY.md)
 - [docs/SCOPE.md](docs/SCOPE.md)

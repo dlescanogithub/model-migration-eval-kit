@@ -3,7 +3,7 @@
 
 PY ?= python3
 
-.PHONY: setup lint test eval eval-regression demo secretscan secretscan-hash
+.PHONY: setup lint test eval eval-regression demo secretscan secretscan-hash platform-eval platform-eval-regression platform-demo
 
 setup:
 	$(PY) -m pip install -e ".[dev]"
@@ -32,3 +32,13 @@ secretscan:
 
 secretscan-hash:
 	$(PY) -m migration_eval secretscan --check-hash
+
+platform-eval:
+	$(PY) -m migration_eval platform-migrations eval
+
+# This target is supposed to fail. A zero exit means the parity regression gate is broken.
+platform-eval-regression:
+	$(PY) -m migration_eval platform-migrations eval-regression
+
+platform-demo:
+	$(PY) -m migration_eval platform-migrations demo --out out/platform-demo

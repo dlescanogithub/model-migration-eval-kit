@@ -1,0 +1,107 @@
+# Synthetic inventory for the fictional Aerolito Data analytics team.
+# Not a real client, not a real schema, not a real row count.
+platform_name: aerolito-legacy
+kind: scheduled-jobs
+inventory_as_of: "2026-03-01"
+owners:
+  - team-data
+  - team-features
+  - team-scoring
+datasets:
+  - id: ds.raw.bookings
+    name: Synthetic booking events
+    owner: team-data
+    sensitivity: confidential
+    format: parquet
+    row_count: 50000
+    effort: 1
+    columns:
+      - {name: booking_id, dtype: string}
+      - {name: traveler_id, dtype: string}
+      - {name: fare, dtype: float}
+    upstream: []
+  - id: ds.raw.clicks
+    name: Synthetic offer clicks
+    owner: team-data
+    sensitivity: internal
+    format: parquet
+    row_count: 80000
+    effort: 1
+    columns:
+      - {name: click_id, dtype: string}
+      - {name: traveler_id, dtype: string}
+    upstream: []
+  - id: ds.features.traveler
+    name: Synthetic traveler features
+    owner: team-features
+    sensitivity: confidential
+    format: parquet
+    row_count: 8000
+    effort: 1
+    columns:
+      - {name: traveler_id, dtype: string}
+      - {name: trips_90d, dtype: float}
+      - {name: fare_avg, dtype: float}
+    upstream:
+      - ds.raw.bookings
+      - ds.raw.clicks
+  - id: ds.scores.churn
+    name: Synthetic churn scores
+    owner: team-scoring
+    sensitivity: confidential
+    format: parquet
+    row_count: 8000
+    effort: 1
+    columns:
+      - {name: traveler_id, dtype: string}
+      - {name: churn_score, dtype: float}
+    upstream:
+      - ds.features.traveler
+jobs:
+  - id: job.ingest.bookings
+    name: Ingest synthetic bookings
+    schedule: "0 1 * * *"
+    owner: team-data
+    effort: 2
+    datasets_in: []
+    datasets_out: [ds.raw.bookings]
+    models: []
+    depends_on: []
+  - id: job.ingest.clicks
+    name: Ingest synthetic clicks
+    schedule: "0 1 * * *"
+    owner: team-data
+    effort: 1
+    datasets_in: []
+    datasets_out: [ds.raw.clicks]
+    models: []
+    depends_on: []
+  - id: job.features.traveler
+    name: Build synthetic traveler features
+    schedule: "0 3 * * *"
+    owner: team-features
+    effort: 3
+    datasets_in: [ds.raw.bookings, ds.raw.clicks]
+    datasets_out: [ds.features.traveler]
+    models: []
+    depends_on: [job.ingest.bookings, job.ingest.clicks]
+  - id: job.score.churn
+    name: Score synthetic churn
+    schedule: "0 5 * * *"
+    owner: team-scoring
+    effort: 2
+    datasets_in: [ds.features.traveler]
+    datasets_out: [ds.scores.churn]
+    models: [model.churn.scorer]
+    depends_on: [job.features.traveler]
+models:
+  - id: model.churn.scorer
+    name: Synthetic churn scorer
+    owner: team-scoring
+    framework: sklearn
+    stage: Production
+    version: "3"
+    effort: 5
+    datasets: [ds.features.traveler]
+    jobs: [job.score.churn]
+    registry_name: churn_scorer
