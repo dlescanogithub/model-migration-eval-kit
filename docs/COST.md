@@ -29,9 +29,9 @@ The simulated rows above are not a live bill. A live price is not stored in the 
 
 The live cost this repo computes is input tokens times the input rate plus output tokens times the output rate. It ignores cached tokens. When a provider charges less for a cache hit, that figure overestimates the bill.
 
-`compare-live` with the same model name on both sides is a self-compare. It exercises the harness. It is not a migration from one model to another.
+`compare-live` with the same model name on both sides is a self-compare. It exercises the harness. It is not a migration from one model to another. Differences between sides are sampling noise, so McNemar and GO/NO_GO on that pair are not evidence of anything.
 
-The first live run, 2026-10-17, `compare-live --runs 1`, same model on both sides, 63 tickets, cost about US$0.053. The harness estimate for that run was about US$0.100, because cached tokens are ignored. That run is the self-compare described in the README. Re-verification after the priority-table change is pending. This file does not add a new live pass rate.
+The first live run, 2026-10-17, `compare-live --runs 1`, same model on both sides, 63 tickets, cost about US$0.053. The harness estimate for that run was about US$0.100, because cached tokens are ignored. The third verification the same day, same command, is recorded as migration OK: 29/63 raw responses were identical across sides, and the rest differed by model variation. This file does not add a new live pass rate.
 
 | Date | Command | Sides | Spend | Notes |
 | --- | --- | --- | --- | --- |
