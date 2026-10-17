@@ -30,6 +30,7 @@ from migration_eval.prices import ModelPrice, PriceTable, cost_usd
 from migration_eval.providers.base import Provider
 from migration_eval.providers.cassette import CassetteProvider
 from migration_eval.retries import RetryableError, run_with_retries
+from migration_eval.spec import priority_rule_lines
 
 LIVE_RETRY_JITTER = 0.2
 
@@ -42,8 +43,9 @@ _NETWORK_ERRORS: tuple[type[BaseException], ...] = (
 
 
 def build_system_prompt() -> str:
-    """Prompt text. The category-to-queue lines are QUEUE_FOR_CATEGORY, the grader's map."""
+    """Prompt text. Queue lines and priority lines are the grader's tables, not a second copy."""
     table = "\n".join(f"- {category} -> {queue}" for category, queue in QUEUE_FOR_CATEGORY.items())
+    priority = "\n".join(priority_rule_lines())
     categories = ", ".join(QUEUE_FOR_CATEGORY)
     example_queue = QUEUE_FOR_CATEGORY["order_status"]
     example = {
@@ -58,13 +60,15 @@ def build_system_prompt() -> str:
         "Return one JSON object and no other text.\n"
         "JSON schema:\n"
         f"- category: string, one of {categories}\n"
-        "- priority: one of low, medium, high\n"
+        "- priority: one of low, medium, high. Apply the priority table below. First match wins.\n"
         "- queue: string, exactly the queue mapped from category in the table below\n"
         "- rationale: short string with no customer contact data\n"
         "- tool_calls: array of length exactly 1. The only object allowed is "
         '{"name": "route_ticket", "arguments": {"queue": "<the same queue as the queue field>"}}\n'
         "Allowed category -> queue:\n"
         f"{table}\n"
+        "Priority rules, first match wins. This is the same table the grader uses:\n"
+        f"{priority}\n"
         "Example:\n"
         f"{json.dumps(example, ensure_ascii=False)}\n"
         "Call route_ticket exactly once. Do not leave tool_calls empty. Do not invent a queue name.\n"

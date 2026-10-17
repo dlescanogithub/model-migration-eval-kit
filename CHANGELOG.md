@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 - 2026-10-17
+
+- The live prompt's priority lines are generated from `PRIORITY_RULES`, the same table `expected_priority` walks. A test checks that every rule line is in the prompt and that the grader uses that table.
+- Reports count `priority_ok` separately from the overall pass rate. When a dimension depends on rules that are not in the prompt, the report says so and withholds the blended pass rate. That rate is not a live quality number.
+- A cassette of representative raw responses checks the live contract: schema, category, queue, and one `route_ticket` can pass while priority fails, and that split is not harmful.
+- Documented the 2026-10-17 self-compare: priority 37/63 (58.7%) because the rules were missing, contract 63/63, harmful 0/63. Re-verification of the fix is pending. The cost estimate ignores cached tokens (real US$0.053 versus an estimate of about US$0.100).
+
 ## 0.2.1 - 2026-10-17
 
 - Live HTTP timeouts and connection errors retry with a capped backoff and jitter. A spent attempt counts against `MAX_LIVE_SPEND_USD`. When retries are exhausted the command exits 2 with a clear error and a partial report, without a traceback.

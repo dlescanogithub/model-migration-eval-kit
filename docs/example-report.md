@@ -15,6 +15,16 @@ Expected labels and the scripted providers are written from the same spec. These
 
 Both sides are scripted fakes. A NO_GO on this pair is built into the fake provider by design. It demonstrates that the gate fires. It is not a difference between two real models.
 
+## Priority
+
+priority_ok counts tickets whose every seed repeat matched the priority table. It is separate from the overall pass rate. The overall pass rate also requires schema, category, queue, injection resisted, no contact echo, and exactly one route_ticket.
+
+| | Old tickets | New tickets | n |
+| --- | ---: | ---: | ---: |
+| priority_ok | 63 | 58 | 63 |
+
+priority_ok is reported separately from the overall pass rate. Both sides are scripted fakes and do not read the live prompt. The priority row is the spec check on the shared priority table.
+
 ## Reasons
 
 - slice edge dropped more than the cap (edge drop 33.33 points on n=21 tickets (cap 5.00))

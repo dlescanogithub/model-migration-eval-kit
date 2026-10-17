@@ -7,6 +7,8 @@ are scripted against this spec; they are not language models.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from migration_eval.models import (
     ALLOWED_TOOLS,
     PRIORITIES,
@@ -17,24 +19,90 @@ from migration_eval.models import (
     TriageOutput,
 )
 
+# Words for a condition the model can see in the ticket. The grader matches the field, not this phrase.
+_CONDITION_TEXT: dict[tuple[str, str], str] = {
+    ("payment_severity", "failed"): "the ticket says the charge failed or the card was rejected",
+    ("shipping_severity", "lost"): "the ticket says the package was lost",
+    ("urgent", "true"): "the customer says it is urgent or needed today",
+}
+
+
+@dataclass(frozen=True)
+class PriorityRule:
+    """One row of the priority table. First match wins. The prompt prints these rows."""
+
+    priority: str
+    category: str | None = None
+    payment_severity: str | None = None
+    shipping_severity: str | None = None
+    urgent: bool | None = None
+    fallback: bool = False
+
+    def matches(self, ticket: Ticket) -> bool:
+        if self.fallback:
+            return ticket.true_category in QUEUE_FOR_CATEGORY
+        if self.category is None or ticket.true_category != self.category:
+            return False
+        if self.payment_severity is not None and ticket.payment_severity != self.payment_severity:
+            return False
+        if self.shipping_severity is not None and ticket.shipping_severity != self.shipping_severity:
+            return False
+        return not (self.urgent is not None and ticket.urgent != self.urgent)
+
+    def prompt_line(self) -> str:
+        return f"- {self._condition_text()} -> {self.priority}"
+
+    def _condition_text(self) -> str:
+        if self.fallback:
+            return "any other allowed category"
+        if self.category is None:
+            raise ValueError("priority rule needs a category or fallback")
+        extras: list[str] = []
+        if self.payment_severity is not None:
+            extras.append(_condition_phrase("payment_severity", self.payment_severity))
+        if self.shipping_severity is not None:
+            extras.append(_condition_phrase("shipping_severity", self.shipping_severity))
+        if self.urgent is not None:
+            extras.append(_condition_phrase("urgent", "true" if self.urgent else "false"))
+        if not extras:
+            return self.category
+        return self.category + " when " + " and ".join(extras)
+
+
+PRIORITY_RULES: tuple[PriorityRule, ...] = (
+    PriorityRule(category="complaint", priority="high"),
+    PriorityRule(category="payment", payment_severity="failed", priority="high"),
+    PriorityRule(category="shipping", shipping_severity="lost", priority="high"),
+    PriorityRule(category="shipping", priority="medium"),
+    PriorityRule(category="return_request", priority="medium"),
+    PriorityRule(category="order_status", urgent=True, priority="medium"),
+    PriorityRule(priority="low", fallback=True),
+)
+
 
 def expected_priority(ticket: Ticket) -> str:
-    """Priority rules, first match wins."""
-    if ticket.true_category == "complaint":
-        return "high"
-    if ticket.true_category == "payment" and ticket.payment_severity == "failed":
-        return "high"
-    if ticket.true_category == "shipping" and ticket.shipping_severity == "lost":
-        return "high"
-    if ticket.true_category == "shipping":
-        return "medium"
-    if ticket.true_category == "return_request":
-        return "medium"
-    if ticket.true_category == "order_status" and ticket.urgent:
-        return "medium"
-    if ticket.true_category in QUEUE_FOR_CATEGORY:
-        return "low"
+    """Priority rules, first match wins. Walks PRIORITY_RULES and no other table."""
+    for rule in PRIORITY_RULES:
+        if rule.matches(ticket):
+            return rule.priority
     raise ValueError(f"unknown category {ticket.true_category}")
+
+
+def priority_rule_lines() -> tuple[str, ...]:
+    """The prompt block. Each line is one PRIORITY_RULES row, in the same order."""
+    return tuple(rule.prompt_line() for rule in PRIORITY_RULES)
+
+
+def priority_rules_missing_from(prompt: str) -> tuple[str, ...]:
+    """Rule lines the grader uses that this prompt does not contain."""
+    return tuple(line for line in priority_rule_lines() if line not in prompt)
+
+
+def _condition_phrase(field: str, value: str) -> str:
+    phrase = _CONDITION_TEXT.get((field, value))
+    if phrase is None:
+        raise ValueError(f"priority rule condition {field}={value} has no prompt phrase")
+    return phrase
 
 
 def expected_triage(ticket: Ticket) -> TriageOutput:

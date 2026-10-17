@@ -2,7 +2,7 @@
 
 Default commands do not call a vendor. The dollar figures below are simulated token counts times the [EST] rates in `config/prices.yaml` (date on that file: 2026-10-17, source text: illustrative, invented for this exercise). Latency is simulated.
 
-Measured 2026-10-17, package 0.2.1, Python 3.12.3. The same command on this package matches the committed report.
+Measured 2026-10-17, package 0.2.2, Python 3.12.3. The same command on this package matches the committed report.
 
 Platform-move cost (a different formula, still simulated) is in [platform-migrations/COST.md](platform-migrations/COST.md).
 
@@ -23,16 +23,18 @@ Rates used, all [EST], per 1,000 tokens: fake-old and fake-new-flat input 0.005 
 
 No public price page was fetched. Do not replace these rows with a real vendor number unless you add the URL and the date you read it.
 
-## Live compare (not run)
+## Live compare
 
-No live call was made for the numbers in this file. There is no measured live cost here. A live price is not stored in the repo. The owner sets it in the environment for one run.
+The simulated rows above are not a live bill. A live price is not stored in the repo. The owner sets it in the environment for one run.
 
 The live cost this repo computes is input tokens times the input rate plus output tokens times the output rate. It ignores cached tokens. When a provider charges less for a cache hit, that figure overestimates the bill.
 
 `compare-live` with the same model name on both sides is a self-compare. It exercises the harness. It is not a migration from one model to another.
 
-| Date | Command | Models | Spend cap | Price per million tokens | Price date | Decision | Cost | Notes |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| — | `python -m migration_eval compare-live --runs 1 --today YYYY-MM-DD` | `LLM_MODEL_OLD`, `LLM_MODEL_NEW` | `MAX_LIVE_SPEND_USD` | `LLM_USD_PER_M_INPUT`, `LLM_USD_PER_M_OUTPUT` | `LLM_PRICE_DATE` | not run | — | Also requires `LIVE_MODE=1`, `LLM_BASE_URL`, and `LLM_API_KEY`. The same rate is applied to both models. Cassettes go to gitignored `var/cassettes/`. |
+The first live run, 2026-10-17, `compare-live --runs 1`, same model on both sides, 63 tickets, cost about US$0.053. The harness estimate for that run was about US$0.100, because cached tokens are ignored. That run is the self-compare described in the README. Re-verification after the priority-table change is pending. This file does not add a new live pass rate.
+
+| Date | Command | Sides | Spend | Notes |
+| --- | --- | --- | --- | --- |
+| 2026-10-17 | `python -m migration_eval compare-live --runs 1` | same model both sides | real US$0.053; estimate ~US$0.100 | Self-compare. Cached tokens ignored by the estimate. Also requires `LIVE_MODE=1` and the variables in `.env.example`. Cassettes go to gitignored `var/cassettes/`. |
 
 The command exits 2 when any of those variables is missing, and it does not send a request. CI does not set `LIVE_MODE`.

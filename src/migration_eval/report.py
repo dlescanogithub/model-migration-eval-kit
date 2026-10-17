@@ -17,16 +17,20 @@ def report_to_dict(report: CompareReport) -> dict[str, object]:
         "today": report.today,
         "tickets": report.tickets,
         "decision": report.decision.status,
-        "reasons": list(report.decision.reasons),
-        "gates": [{"name": name, "passed": passed, "detail": detail} for name, passed, detail in report.decision.gates],
+        "reasons": list(visible_reasons(report)),
+        "gates": [{"name": name, "passed": passed, "detail": detail} for name, passed, detail in visible_gates(report)],
         "price_note": report.price_note,
         "latency_note": report.latency_note,
-        "metrics": _metrics_dict(report.metrics),
+        "metrics": _metrics_dict(report.metrics, withhold=report.withhold_blended_pass),
         "disagreements": list(report.disagreements),
         "plain_stats": _plain_stats(report.metrics.analysis_n),
         "label_note": _label_note(),
         "gate_note": _fake_gate_note(report),
         "contract_warning": report.contract_warning,
+        "priority_note": report.priority_note,
+        "withhold_blended_pass": report.withhold_blended_pass,
+        "priority_ok_old": report.metrics.priority_ok_old,
+        "priority_ok_new": report.metrics.priority_ok_new,
     }
 
 
@@ -58,45 +62,14 @@ def render_markdown(report: CompareReport) -> str:
     ]
     if report.contract_warning:
         lines.extend([report.contract_warning, ""])
+    lines.extend(_priority_section(report))
     lines.extend(["## Reasons", ""])
-    for reason in report.decision.reasons:
+    for reason in visible_reasons(report):
         lines.append(f"- {reason}")
     lines.extend(["", "## Gates", "", "| Gate | Passed | Detail |", "| --- | --- | --- |"])
-    for name, passed, detail in report.decision.gates:
+    for name, passed, detail in visible_gates(report):
         lines.append(f"| {name} | {'yes' if passed else 'no'} | {detail} |")
-    lines.extend(
-        [
-            "",
-            "## Quality by slice",
-            "",
-            "Pass rates count tickets. A ticket passes only when every seed repeat passed. "
-            "The interval is a bootstrap of (new pass rate - old pass rate) over those tickets.",
-            "",
-            "| Slice | n | Old pass rate | New pass rate | Drop (points) | Bootstrap 95% (new - old) |",
-            "| --- | ---: | ---: | ---: | ---: | --- |",
-        ]
-    )
-    for sl in report.metrics.slices:
-        lines.append(
-            f"| {sl.name} | {sl.n} | {sl.old_pass_rate:.4f} | {sl.new_pass_rate:.4f} | "
-            f"{sl.drop_points:.2f} | [{sl.bootstrap_low:.4f}, {sl.bootstrap_high:.4f}] |"
-        )
-    lines.append(
-        f"| overall | {metrics.overall.n} | {metrics.overall.old_pass_rate:.4f} | "
-        f"{metrics.overall.new_pass_rate:.4f} | {metrics.overall.drop_points:.2f} | "
-        f"[{metrics.bootstrap_low:.4f}, {metrics.bootstrap_high:.4f}] |"
-    )
-    lines.extend(
-        [
-            "",
-            "## Behaviour diff by category",
-            "",
-            "| Category | n | Old pass rate | New pass rate | Drop (points) |",
-            "| --- | ---: | ---: | ---: | ---: |",
-        ]
-    )
-    for sl in metrics.categories:
-        lines.append(f"| {sl.name} | {sl.n} | {sl.old_pass_rate:.4f} | {sl.new_pass_rate:.4f} | {sl.drop_points:.2f} |")
+    lines.extend(_quality_sections(report))
     lines.extend(
         [
             "",
@@ -125,25 +98,10 @@ def render_markdown(report: CompareReport) -> str:
                 f"{metrics.harmful_old} | {metrics.harmful_new} |"
             ),
             "",
-            "## Paired test",
-            "",
-            _plain_stats(metrics.analysis_n),
-            "",
-            f"- Tickets where the old side passed and the new side failed: {metrics.mcnemar_new_worse}",
-            f"- Tickets where the new side passed and the old side failed: {metrics.mcnemar_new_better}",
-            (
-                f"- Exact one-sided McNemar p-value on those n={metrics.analysis_n} tickets: "
-                f"{metrics.mcnemar_p_regression:.6g}"
-            ),
-            (
-                "- Bootstrap 95% interval for the decision metric (new pass rate - old pass rate), "
-                f"resampling tickets: [{metrics.bootstrap_low:.4f}, {metrics.bootstrap_high:.4f}]"
-            ),
-            "",
-            "## Tickets that disagree",
-            "",
         ]
     )
+    lines.extend(_paired_section(report))
+    lines.extend(["## Tickets that disagree", ""])
     if report.disagreements:
         for item in report.disagreements:
             lines.append(f"- {item}")
@@ -211,11 +169,11 @@ def write_report(report: CompareReport, directory: Path) -> tuple[Path, Path]:
     return json_path, md_path
 
 
-def _metrics_dict(metrics: Metrics) -> dict[str, object]:
-    return {
-        "slices": [_slice_dict(item) for item in metrics.slices],
-        "categories": [_slice_dict(item) for item in metrics.categories],
-        "overall": _slice_dict(metrics.overall),
+def _metrics_dict(metrics: Metrics, *, withhold: bool = False) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "slices": [_slice_dict(item, withhold=withhold) for item in metrics.slices],
+        "categories": [_slice_dict(item, withhold=withhold) for item in metrics.categories],
+        "overall": _slice_dict(metrics.overall, withhold=withhold),
         "format_failure_rate_old": metrics.format_failure_rate_old,
         "format_failure_rate_new": metrics.format_failure_rate_new,
         "tool_failure_rate_old": metrics.tool_failure_rate_old,
@@ -224,6 +182,8 @@ def _metrics_dict(metrics: Metrics) -> dict[str, object]:
         "harmful_new": metrics.harmful_new,
         "contract_mismatch_old": metrics.contract_mismatch_old,
         "contract_mismatch_new": metrics.contract_mismatch_new,
+        "priority_ok_old": metrics.priority_ok_old,
+        "priority_ok_new": metrics.priority_ok_new,
         "p50_latency_ms_old": metrics.p50_latency_ms_old,
         "p95_latency_ms_old": metrics.p95_latency_ms_old,
         "p50_latency_ms_new": metrics.p50_latency_ms_new,
@@ -235,12 +195,27 @@ def _metrics_dict(metrics: Metrics) -> dict[str, object]:
         "mcnemar_new_worse": metrics.mcnemar_new_worse,
         "mcnemar_new_better": metrics.mcnemar_new_better,
         "mcnemar_p_regression": metrics.mcnemar_p_regression,
-        "bootstrap_low": metrics.bootstrap_low,
-        "bootstrap_high": metrics.bootstrap_high,
+        "bootstrap_low": "withheld" if withhold else metrics.bootstrap_low,
+        "bootstrap_high": "withheld" if withhold else metrics.bootstrap_high,
     }
+    if withhold:
+        payload["mcnemar_new_worse"] = "withheld"
+        payload["mcnemar_new_better"] = "withheld"
+        payload["mcnemar_p_regression"] = "withheld"
+    return payload
 
 
-def _slice_dict(item: SliceDelta) -> dict[str, object]:
+def _slice_dict(item: SliceDelta, *, withhold: bool = False) -> dict[str, object]:
+    if withhold:
+        return {
+            "name": item.name,
+            "old_pass_rate": "withheld",
+            "new_pass_rate": "withheld",
+            "drop_points": "withheld",
+            "n": item.n,
+            "bootstrap_low": "withheld",
+            "bootstrap_high": "withheld",
+        }
     return {
         "name": item.name,
         "old_pass_rate": item.old_pass_rate,
@@ -250,6 +225,119 @@ def _slice_dict(item: SliceDelta) -> dict[str, object]:
         "bootstrap_low": item.bootstrap_low,
         "bootstrap_high": item.bootstrap_high,
     }
+
+
+def visible_reasons(report: CompareReport) -> tuple[str, ...]:
+    if report.withhold_blended_pass:
+        return (
+            "Blended pass rates are withheld. Priority rules are not in the prompt, "
+            "so a global pass number would mix that dimension and is not a live quality number.",
+        )
+    return report.decision.reasons
+
+
+def visible_gates(report: CompareReport) -> tuple[tuple[str, bool, str], ...]:
+    if report.withhold_blended_pass:
+        return tuple((name, passed, "withheld") for name, passed, _detail in report.decision.gates)
+    return report.decision.gates
+
+
+def _priority_section(report: CompareReport) -> list[str]:
+    metrics = report.metrics
+    return [
+        "## Priority",
+        "",
+        "priority_ok counts tickets whose every seed repeat matched the priority table. "
+        "It is separate from the overall pass rate. "
+        "The overall pass rate also requires schema, category, queue, injection resisted, "
+        "no contact echo, and exactly one route_ticket.",
+        "",
+        "| | Old tickets | New tickets | n |",
+        "| --- | ---: | ---: | ---: |",
+        (f"| priority_ok | {metrics.priority_ok_old} | {metrics.priority_ok_new} | {metrics.analysis_n} |"),
+        "",
+        report.priority_note,
+        "",
+    ]
+
+
+def _quality_sections(report: CompareReport) -> list[str]:
+    if report.withhold_blended_pass:
+        return [
+            "",
+            "## Quality by slice",
+            "",
+            "Blended pass rates are withheld. They mix priority with the other checks, "
+            "and the priority rules are not in the prompt. They are not a live quality number. "
+            "Read priority_ok above.",
+            "",
+            "## Behaviour diff by category",
+            "",
+            "Category pass rates are withheld for the same reason. They are not a live quality number.",
+            "",
+        ]
+    metrics = report.metrics
+    lines = [
+        "",
+        "## Quality by slice",
+        "",
+        "Pass rates count tickets. A ticket passes only when every seed repeat passed. "
+        "The interval is a bootstrap of (new pass rate - old pass rate) over those tickets.",
+        "",
+        "| Slice | n | Old pass rate | New pass rate | Drop (points) | Bootstrap 95% (new - old) |",
+        "| --- | ---: | ---: | ---: | ---: | --- |",
+    ]
+    for sl in metrics.slices:
+        lines.append(
+            f"| {sl.name} | {sl.n} | {sl.old_pass_rate:.4f} | {sl.new_pass_rate:.4f} | "
+            f"{sl.drop_points:.2f} | [{sl.bootstrap_low:.4f}, {sl.bootstrap_high:.4f}] |"
+        )
+    lines.append(
+        f"| overall | {metrics.overall.n} | {metrics.overall.old_pass_rate:.4f} | "
+        f"{metrics.overall.new_pass_rate:.4f} | {metrics.overall.drop_points:.2f} | "
+        f"[{metrics.bootstrap_low:.4f}, {metrics.bootstrap_high:.4f}] |"
+    )
+    lines.extend(
+        [
+            "",
+            "## Behaviour diff by category",
+            "",
+            "| Category | n | Old pass rate | New pass rate | Drop (points) |",
+            "| --- | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for sl in metrics.categories:
+        lines.append(f"| {sl.name} | {sl.n} | {sl.old_pass_rate:.4f} | {sl.new_pass_rate:.4f} | {sl.drop_points:.2f} |")
+    return lines
+
+
+def _paired_section(report: CompareReport) -> list[str]:
+    metrics = report.metrics
+    if report.withhold_blended_pass:
+        return [
+            "## Paired test",
+            "",
+            "The paired pass-rate gap is withheld. It mixes priority with the other checks, "
+            "and the priority rules are not in the prompt. It is not a live quality number.",
+            "",
+        ]
+    return [
+        "## Paired test",
+        "",
+        _plain_stats(metrics.analysis_n),
+        "",
+        f"- Tickets where the old side passed and the new side failed: {metrics.mcnemar_new_worse}",
+        f"- Tickets where the new side passed and the old side failed: {metrics.mcnemar_new_better}",
+        (
+            f"- Exact one-sided McNemar p-value on those n={metrics.analysis_n} tickets: "
+            f"{metrics.mcnemar_p_regression:.6g}"
+        ),
+        (
+            "- Bootstrap 95% interval for the decision metric (new pass rate - old pass rate), "
+            f"resampling tickets: [{metrics.bootstrap_low:.4f}, {metrics.bootstrap_high:.4f}]"
+        ),
+        "",
+    ]
 
 
 def _plain_stats(n: int) -> str:
