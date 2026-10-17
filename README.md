@@ -6,7 +6,7 @@ Offline check for a fictional shop, Casa Brisa: same 63 synthetic tickets, two s
 
 Swapping a model because the new one is cheaper can hide a bad slice. This repo runs one golden set on an old and a new provider and refuses the swap when a configured slice drops too far, when the adversarial slice gets worse, or when a paired test says the extra failures are not a coin flip.
 
-Measured on 2026-10-17, package 0.2.0, Python 3.12.3. Command:
+Measured on 2026-10-17, package 0.2.1, Python 3.12.3. Command:
 
 ```text
 python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17
@@ -69,7 +69,7 @@ Measured on 2026-10-17, package 0.2.0, Python 3.12.3: `platform-migrations eval`
 
 ## Results
 
-Measured 2026-10-17, package 0.2.0, Python 3.12.3, command in the Problem section, 10 seed repeats collapsed to n=63 tickets. Re-run on this package matched the committed report. Source file: [docs/example-report.md](docs/example-report.md).
+Measured 2026-10-17, package 0.2.1, Python 3.12.3, command in the Problem section, 10 seed repeats collapsed to n=63 tickets. Re-run on this package matched the committed report. Source file: [docs/example-report.md](docs/example-report.md). Contract mismatch tickets are 0 and 1. The one ticket is the scripted invalid JSON in `fake-new`. It is not a harmful ticket.
 
 | Slice | n | Old pass rate | New pass rate | Drop (points) | Bootstrap 95% (new - old) |
 | --- | ---: | ---: | ---: | ---: | --- |
@@ -95,9 +95,11 @@ Other profiles, same command shape, `--runs 10 --today 2026-10-17`, measured in 
 | fake-new-flat | NEED_HUMAN | 1.0000 | Same labels, savings ratio 0.0000 |
 | fake-new-degraded | NO_GO | 0.6667 | Adversarial pass rate 0 on n=14, 14 harmful tickets |
 
-### Live compare (not run)
+### Live compare
 
-No live call was made for this repository. The table is a placeholder for the owner. Prices for a live run come from the environment and are not stored here.
+Estado: **implementado, verificación live pendiente**. Chief todavía no reverificó este arreglo. No hay un resultado live nuevo en este README. La tabla de abajo sigue vacía a propósito.
+
+El costo que calcula este repo es tokens de entrada y de salida por la tarifa del entorno. Ignora tokens cacheados, así que sobreestima cuando el proveedor descuenta el cache. `compare-live` con el mismo modelo en los dos lados es un auto-compare, no una migración real.
 
 | Date | Command | Old model | New model | Decision | n | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -183,7 +185,7 @@ See [SECURITY.md](SECURITY.md) and [docs/RISKS.md](docs/RISKS.md).
 | Golden set, invariants, fake providers, cassette, comparison, policy, report, ADR draft | Implemented |
 | Synthetic canary and rollback decision, deprecation calendar | Implemented |
 | Forced regression (`fake-new-degraded` must be NO_GO) | Implemented |
-| Optional chat-completions HTTP adapter (`compare-live`), off unless `LIVE_MODE=1` | Implemented, not used in CI, no live result recorded |
+| Optional chat-completions HTTP adapter (`compare-live`), off unless `LIVE_MODE=1` | implementado, verificación live pendiente. Not used in CI. No live result recorded |
 | Live shadow, live canary, contract review | Design only |
 | Document-extraction swap, voice-agent swap, personal assistant, newsletter | Design only |
 | Platform inventory, waves, parity, checklist gate, registry simulator, 12 invariants, forced parity regression | Implemented, synthetic files only |

@@ -13,6 +13,8 @@ from migration_eval.providers.base import Provider
 from migration_eval.providers.fake import PROFILES
 from migration_eval.stats import bootstrap_rate_delta, mcnemar_regression_pvalue, percentile
 
+CONTRACT_SANITY_WARNING = "posible desajuste prompt/grader, no es calidad del modelo"
+
 
 @dataclass(frozen=True)
 class CompareReport:
@@ -26,6 +28,7 @@ class CompareReport:
     price_note: str
     latency_note: str
     disagreements: tuple[str, ...]
+    contract_warning: str = ""
 
 
 def compare_providers(
@@ -39,6 +42,7 @@ def compare_providers(
     today: str,
     bootstrap_rounds: int = 400,
     bootstrap_seed: int = 0,
+    stop_on_live_error: bool = False,
 ) -> CompareReport:
     if runs < 1:
         raise ValueError("runs must be >= 1")
@@ -50,8 +54,13 @@ def compare_providers(
     new_rows: list[Graded] = []
     for seed in range(runs):
         for ticket in tickets:
-            old_rows.append(grade(old, ticket, seed=seed, price=old_price))
-            new_rows.append(grade(new, ticket, seed=seed, price=new_price))
+            try:
+                old_rows.append(grade(old, ticket, seed=seed, price=old_price))
+                new_rows.append(grade(new, ticket, seed=seed, price=new_price))
+            except Exception as exc:
+                if not stop_on_live_error or not _is_live_stop(exc):
+                    raise
+                raise IncompleteLiveRun(str(exc), old_rows, new_rows, ticket.id) from exc
     metrics = _metrics(
         old_rows,
         new_rows,
@@ -78,6 +87,7 @@ def compare_providers(
         price_note=prices.note,
         latency_note=latency_note,
         disagreements=_disagreements(old_rows, new_rows),
+        contract_warning=_contract_warning(metrics, old.name, new.name),
     )
 
 
@@ -137,6 +147,8 @@ def _metrics(
         tool_failure_rate_new=_ticket_flag_rate(new_rows, lambda row: row.check.tool_failed),
         harmful_old=_harmful_tickets(old_rows),
         harmful_new=_harmful_tickets(new_rows),
+        contract_mismatch_old=_contract_tickets(old_rows),
+        contract_mismatch_new=_contract_tickets(new_rows),
         p95_latency_ms_old=percentile([row.completion.latency_ms for row in old_rows], 95),
         p95_latency_ms_new=percentile([row.completion.latency_ms for row in new_rows], 95),
         p50_latency_ms_old=percentile([row.completion.latency_ms for row in old_rows], 50),
@@ -204,6 +216,38 @@ def _ticket_flag_rate(rows: list[Graded], pred: Callable[[Graded], bool]) -> flo
 
 def _harmful_tickets(rows: list[Graded]) -> int:
     return len({row.ticket.id for row in rows if row.check.harmful})
+
+
+def _contract_tickets(rows: list[Graded]) -> int:
+    return len({row.ticket.id for row in rows if row.check.contract_mismatch})
+
+
+class IncompleteLiveRun(RuntimeError):
+    """A live compare stopped. Completed rows are the partial report."""
+
+    def __init__(self, message: str, old_rows: list[Graded], new_rows: list[Graded], ticket_id: str) -> None:
+        super().__init__(message)
+        self.old_rows = old_rows
+        self.new_rows = new_rows
+        self.ticket_id = ticket_id
+
+
+def _is_live_stop(exc: Exception) -> bool:
+    from migration_eval.providers.openai_compat import LiveTransportError, SpendCapExceeded
+
+    return isinstance(exc, (LiveTransportError, SpendCapExceeded))
+
+
+def _contract_warning(metrics: Metrics, old_name: str, new_name: str) -> str:
+    scripted = old_name.startswith("fake-") and new_name.startswith("fake-")
+    if scripted or metrics.analysis_n <= 0:
+        return ""
+    near_zero = metrics.overall.old_pass_rate <= 0.05 and metrics.overall.new_pass_rate <= 0.05
+    old_rate = metrics.contract_mismatch_old / metrics.analysis_n
+    new_rate = metrics.contract_mismatch_new / metrics.analysis_n
+    if near_zero and old_rate >= 0.8 and new_rate >= 0.8:
+        return CONTRACT_SANITY_WARNING
+    return ""
 
 
 def _pair(old_rows: list[Graded], new_rows: list[Graded]) -> list[tuple[Graded, Graded]]:

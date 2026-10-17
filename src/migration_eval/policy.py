@@ -60,6 +60,8 @@ class Metrics:
     bootstrap_low: float
     bootstrap_high: float
     analysis_n: int = 0
+    contract_mismatch_old: int = 0
+    contract_mismatch_new: int = 0
 
     @property
     def savings_ratio(self) -> float:

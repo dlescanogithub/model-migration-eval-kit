@@ -11,7 +11,7 @@ from pathlib import Path
 from migration_eval import __version__
 from migration_eval.adr import write_migration_adr
 from migration_eval.canary import load_canary_criteria, simulate_canary, write_audit
-from migration_eval.compare import compare_providers
+from migration_eval.compare import IncompleteLiveRun, compare_providers
 from migration_eval.deprecation import check_calendar, load_calendar, render_calendar_report
 from migration_eval.evalgate import evaluate_provider
 from migration_eval.golden import build_golden, dump_golden, load_golden
@@ -23,7 +23,7 @@ from migration_eval.policy import load_policy
 from migration_eval.prices import load_prices
 from migration_eval.providers.factory import build_provider
 from migration_eval.providers.openai_compat import prepare_live_compare
-from migration_eval.report import render_markdown, write_report
+from migration_eval.report import render_markdown, write_partial_live_report, write_report
 from migration_eval.secretscan import hash_matches, scan_path
 from migration_eval.trace import append_trace
 
@@ -175,16 +175,30 @@ def cmd_compare_live(args: argparse.Namespace) -> int:
         cassette_dir=cassette_dir,
         base_prices=prices,
     )
-    report = compare_providers(
-        old,
-        new,
-        tickets,
-        runs=args.runs,
-        policy=policy,
-        prices=live_prices,
-        today=args.today,
-    )
     out = args.out if args.out is not None else root / "out" / "compare-live"
+    try:
+        report = compare_providers(
+            old,
+            new,
+            tickets,
+            runs=args.runs,
+            policy=policy,
+            prices=live_prices,
+            today=args.today,
+            stop_on_live_error=True,
+        )
+    except IncompleteLiveRun as exc:
+        write_partial_live_report(
+            str(exc),
+            out,
+            ticket_id=exc.ticket_id,
+            completed_old=len(exc.old_rows),
+            completed_new=len(exc.new_rows),
+        )
+        print(f"error: {exc}", file=sys.stderr)
+        print(f"partial report: {out / 'report.md'}")
+        log_event("compare_live_stopped", ticket=exc.ticket_id, error=str(exc))
+        return 2
     write_report(report, out)
     write_migration_adr(report, out / "migration-adr.md")
     _write_trace_summary(out / "traces.jsonl", report.old_name, report.new_name, report.decision.status)

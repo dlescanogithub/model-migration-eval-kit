@@ -53,6 +53,50 @@ def test_retries_cap_and_exhaustion() -> None:
         raise AssertionError("expected RetryableError")
 
 
+def test_retry_jitter_stays_inside_the_cap() -> None:
+    sleeps: list[float] = []
+
+    def always() -> str:
+        raise RetryableError("still")
+
+    with pytest.raises(RetryableError):
+        run_with_retries(
+            always,
+            max_attempts=2,
+            base_delay_s=0.1,
+            backoff_cap_s=0.15,
+            jitter_ratio=1.0,
+            sleep=sleeps.append,
+            rng=lambda: 1.0,
+        )
+    assert sleeps == [0.15]
+
+
+def test_compare_live_writes_a_partial_report(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from migration_eval.compare import IncompleteLiveRun
+
+    def prepare(*_args: object, **_kwargs: object) -> tuple[object, object, object]:
+        return object(), object(), object()
+
+    def stop(*_args: object, **_kwargs: object) -> object:
+        raise IncompleteLiveRun(
+            "live request failed after 3 attempts (network error: TimeoutError: timed out). "
+            "Ticket t-01. No further request was sent.",
+            [],
+            [],
+            "t-01",
+        )
+
+    monkeypatch.setattr("migration_eval.cli.prepare_live_compare", prepare)
+    monkeypatch.setattr("migration_eval.cli.compare_providers", stop)
+    code = main(["compare-live", "--runs", "1", "--today", "2026-10-17", "--out", str(tmp_path)])
+    assert code == 2
+    text = (tmp_path / "report.md").read_text(encoding="utf-8")
+    assert "Partial live comparison" in text
+    assert "No further request was sent" in text
+    assert "t-01" in text
+
+
 def test_json_log_and_trace(tmp_path: Path) -> None:
     stream_path = tmp_path / "log.txt"
     handle = stream_path.open("w", encoding="utf-8")

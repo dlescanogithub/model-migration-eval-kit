@@ -1,28 +1,41 @@
 from __future__ import annotations
 
 import json
+import urllib.error
 from pathlib import Path
 
 import pytest
 
-from migration_eval.compare import compare_providers
+from migration_eval.compare import CONTRACT_SANITY_WARNING, IncompleteLiveRun, compare_providers
 from migration_eval.golden import build_golden
-from migration_eval.models import render_user_prompt
+from migration_eval.models import (
+    Completion,
+    ToolCall,
+    TriageOutput,
+    parse_triage,
+    render_output,
+    render_user_prompt,
+    sim_tokens,
+)
 from migration_eval.paths import repo_root
 from migration_eval.policy import load_policy
-from migration_eval.prices import load_prices
+from migration_eval.prices import ModelPrice, PriceTable, cost_usd, load_prices
 from migration_eval.providers.cassette import CassetteMiss, CassetteProvider
 from migration_eval.providers.factory import build_provider
 from migration_eval.providers.fake import PROFILES, FakeProvider
 from migration_eval.providers.openai_compat import (
+    LIVE_OUTPUT_RESERVE_TOKENS,
     LiveConfigError,
     LiveDisabled,
     LiveProvider,
     SpendCapExceeded,
+    SpendTracker,
     prepare_live_compare,
     urllib_post,
 )
+from migration_eval.report import render_markdown
 from migration_eval.retries import RetryableError
+from migration_eval.spec import expected_triage
 
 
 def test_fake_profiles_are_seed_stable_and_offline() -> None:
@@ -72,7 +85,13 @@ def test_live_provider_uses_injected_http_and_retries() -> None:
         assert headers["Authorization"].startswith("Bearer ")
         assert timeout > 0
         payload = json.loads(body.decode("utf-8"))
+        system = payload["messages"][0]["content"]
         assert "true_category" not in payload["messages"][1]["content"]
+        assert "order_status -> queue_orders" in system
+        assert "return_request -> queue_returns" in system
+        assert "exactly once" in system
+        assert '"name": "route_ticket"' in system
+        assert "Example:" in system
         if calls["n"] == 1:
             raise RetryableError("http 503")
         return {
@@ -145,6 +164,142 @@ def test_urllib_post_retries_http_and_reads_body(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr("urllib.request.urlopen", failing)
     with pytest.raises(RetryableError):
         urllib_post("https://example.test", {}, b"{}", 1)
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        TimeoutError("The read operation timed out"),
+        ConnectionError("connection reset"),
+        urllib.error.URLError("timed out"),
+    ],
+)
+def test_urllib_post_retries_network_errors(monkeypatch: pytest.MonkeyPatch, error: Exception) -> None:
+    def failing(_request: object, timeout: float = 0) -> object:
+        raise error
+
+    monkeypatch.setattr("urllib.request.urlopen", failing)
+    with pytest.raises(RetryableError, match="network error"):
+        urllib_post("https://example.test", {}, b"{}", 1)
+
+
+def test_live_provider_retries_timeout_then_stops(tmp_path: Path) -> None:
+    calls = {"n": 0}
+
+    def http_post(url: str, headers: dict[str, str], body: bytes, timeout: float) -> dict[str, object]:
+        calls["n"] += 1
+        if calls["n"] <= 2:
+            return _chat_body()
+        raise TimeoutError("The read operation timed out")
+
+    root = repo_root()
+    old, new, prices = prepare_live_compare(
+        _live_env(MAX_LIVE_SPEND_USD="1"),
+        cassette_dir=tmp_path,
+        base_prices=load_prices(root / "config" / "prices.yaml"),
+        http_post=http_post,
+        sleep=lambda _delay: None,
+    )
+    with pytest.raises(IncompleteLiveRun, match="TimeoutError") as caught:
+        compare_providers(
+            old,
+            new,
+            build_golden()[:2],
+            runs=1,
+            policy=load_policy(root / "config" / "policy.yaml"),
+            prices=prices,
+            today="2026-10-17",
+            bootstrap_rounds=5,
+            stop_on_live_error=True,
+        )
+    assert "No further request was sent" in str(caught.value)
+    assert len(caught.value.old_rows) == 1
+    assert len(caught.value.new_rows) == 1
+    assert calls["n"] == 5
+
+
+def test_timeout_retries_stop_at_the_spend_cap() -> None:
+    ticket = build_golden()[0]
+    price = ModelPrice("m", "chat-completions", 0.001, 0.002, "test", "2026-10-17")
+    estimate = cost_usd(price, sim_tokens(render_user_prompt(ticket)), LIVE_OUTPUT_RESERVE_TOKENS)
+    calls = {"n": 0}
+
+    def http_post(url: str, headers: dict[str, str], body: bytes, timeout: float) -> dict[str, object]:
+        calls["n"] += 1
+        raise TimeoutError("The read operation timed out")
+
+    provider = LiveProvider(
+        base_url="https://example.test/v1",
+        api_key="test-key",
+        model="m",
+        enabled=True,
+        http_post=http_post,
+        max_attempts=3,
+        sleep=lambda _delay: None,
+        spend=SpendTracker(estimate),
+        price=price,
+    )
+    with pytest.raises(SpendCapExceeded):
+        provider.complete(ticket, seed=0)
+    assert calls["n"] == 1
+
+
+def test_contract_failure_on_both_sides_warns_it_is_not_model_quality() -> None:
+    class _ContractMiss:
+        def __init__(self, name: str) -> None:
+            self.name = name
+            self.model = name
+            self.latency_kind = "measured"
+
+        def complete(self, ticket: object, *, seed: int) -> Completion:
+            from migration_eval.models import Ticket
+
+            assert isinstance(ticket, Ticket)
+            output = expected_triage(ticket)
+            invented = TriageOutput(
+                category=output.category,
+                priority=output.priority,
+                queue="orders",
+                rationale=output.rationale,
+                tool_calls=(ToolCall(name="route_ticket", arguments={"queue": "orders"}),),
+            )
+            raw = render_output(invented)
+            return Completion(
+                provider=self.name,
+                model=self.model,
+                ticket_id=ticket.id,
+                seed=seed,
+                raw_text=raw,
+                parsed=parse_triage(raw),
+                input_tokens=1,
+                output_tokens=1,
+                latency_ms=1.0,
+                latency_kind="measured",
+                attempts=1,
+            )
+
+    root = repo_root()
+    base = load_prices(root / "config" / "prices.yaml")
+    models = dict(base.models)
+    for name in ("live-a", "live-b"):
+        models[name] = ModelPrice(name, "chat-completions", 0.001, 0.002, "test", "2026-10-17")
+    report = compare_providers(
+        _ContractMiss("live-a"),
+        _ContractMiss("live-b"),
+        build_golden(),
+        runs=1,
+        policy=load_policy(root / "config" / "policy.yaml"),
+        prices=PriceTable(base.currency, base.note, models),
+        today="2026-10-17",
+        bootstrap_rounds=5,
+    )
+    assert report.metrics.overall.old_pass_rate == 0
+    assert report.metrics.overall.new_pass_rate == 0
+    assert report.metrics.harmful_old == 0
+    assert report.metrics.harmful_new == 0
+    assert report.metrics.contract_mismatch_old == 63
+    assert report.contract_warning == CONTRACT_SANITY_WARNING
+    assert CONTRACT_SANITY_WARNING in render_markdown(report)
 
 
 def _live_env(**overrides: str) -> dict[str, str]:
