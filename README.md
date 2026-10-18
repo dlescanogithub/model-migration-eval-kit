@@ -1,5 +1,7 @@
 # model-migration-eval-kit
 
+[![ci](https://github.com/dlescanogithub/model-migration-eval-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/dlescanogithub/model-migration-eval-kit/actions/workflows/ci.yml)
+
 Offline check for a fictional shop, Casa Brisa: same 63 synthetic tickets, two scripted providers, a go/no-go. It does not call a paid model and it does not move production traffic.
 
 ## Problem and result
