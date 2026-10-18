@@ -8,6 +8,6 @@ The same helpers are maintained in parallel across the portfolio repositories
 and kept aligned. The ticket-triage golden set, the go/no-go policy, the canary
 simulator, and the deprecation calendar belong to this repository.
 
-Nothing in this tree is copied from employer or client work.
+All data in this tree is synthetic. Casa Brisa and Aerolito Data are fictional. Money figures are [EST] or simulated.
 
 See docs/PROVENANCE.md.

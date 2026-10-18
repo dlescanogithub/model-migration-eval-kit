@@ -32,7 +32,7 @@
 
 ## Out of scope
 
-- Real customer data, real employer names, real prices scraped from a vendor.
+- Real customer data, and real prices scraped from a vendor.
 - Production routing, paging, identity, or a legal review of a contract.
 - Training or fine-tuning.
 - Exact tool-call trajectories as the pass condition.

@@ -20,6 +20,4 @@ secretscan.py sha256: db07c964e117ebd0458b9a0a2552481dc9f665680b017d3b83c667b817
 
 What was written for the model axis: the Casa Brisa ticket fixtures, the scripted fake profiles, the comparison and the policy, the canary simulator, the deprecation calendar, and the optional chat-completions HTTP adapter. That adapter stays off unless `LIVE_MODE=1`.
 
-The platform chapter (`src/migration_eval/platform_migrations/`, `docs/platform-migrations/`) comes from the portfolio playbook at commit `2195045cadb69f36ff8cff09cb0eb64e750a4c9b` (package name there: mlmig 0.1.0). The wave planner, cycle detection, parity checker, registry rollback, synthetic estate generator, and the Aerolito fixtures moved in. `secretscan`, `evalkit`, logging, retries, and the JSON trace stayed the copies already in this tree. The operation cassette and the invariant runner now live in that same `evalkit` package. There is no second scanner and no second retry helper.
-
-Nothing here is copied from employer or client work. Aerolito Data and Casa Brisa are fictional.
+The platform chapter (src/migration_eval/platform_migrations/, docs/platform-migrations/) was developed in a separate private repository (now archived) and merged here in PR #1. It was written for this portfolio from a generic brief that asked for public and synthetic information only. All data is synthetic; Aerolito Data and Casa Brisa are fictional; all money figures are [EST] or simulated.

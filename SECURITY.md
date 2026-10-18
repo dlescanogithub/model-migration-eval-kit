@@ -1,10 +1,10 @@
 # Security
 
-This repository is a private portfolio exercise. It does not ship credentials and it does not call a model vendor unless someone turns that on locally.
+This repository is a portfolio exercise. It does not ship credentials and it does not call a model vendor unless someone turns that on locally.
 
 ## Reporting
 
-Open a private issue on this repository, or contact the owner directly. Do not include API keys, customer data, or ticket exports in the report.
+Use GitHub private vulnerability reporting (Security tab, Report a vulnerability). Do not include API keys, customer data, or ticket exports in the report.
 
 ## What the default path does
 
