@@ -25,7 +25,7 @@ The invariant `cost_within_cap` fails if that simulated product exceeds the cap.
 
 ## Table
 
-Latency below is one wall-clock sample from 2026-10-17 (package 0.2.0, Python 3.12.3). p50 and p95 are not computed from a single sample, so those cells say so. Dual-run latency is not applicable: nothing is executed on a cluster. The 38 tests and 92.10% coverage figure belonged to the standalone playbook package. This tree's measurement is the row below.
+Latency below is one wall-clock sample from 2026-10-17 (package 0.2.0, Python 3.12.3). p50 and p95 are not computed from a single sample, so those cells say so. Dual-run latency is not applicable: nothing is executed on a cluster. The 38 tests and 92.10% coverage figure is from an earlier measurement, not from this tree. This tree's measurement is the row below.
 
 | Scenario | Model / provider | Tokens or units | Cost / run | p50 / p95 latency | Quality | Price date / source |
 | --- | --- | --- | --- | --- | --- | --- |

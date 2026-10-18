@@ -12,7 +12,7 @@ Measured on 2026-10-17, package 0.2.2, Python 3.12.3. Command:
 python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17
 ```
 
-The edge slice pass rate goes from 1.0000 to 0.6667, a drop of 33.33 points on n=21 tickets. The policy cap is 5 points, so the decision is **NO_GO**. That NO_GO is built into `fake-new` on purpose. It shows the gate fires. It is not a difference between two real models. Expected labels come from the same spec as the fakes, so the rates show that the machinery runs. The full table is [docs/example-report.md](docs/example-report.md). Latency in that run is simulated. Prices in that run are [EST] figures from [config/prices.yaml](config/prices.yaml), not a vendor invoice. The git commit that contains this measurement is recorded in the draft PR description (`git rev-parse HEAD` after the commit that regenerated the report).
+The edge slice pass rate goes from 1.0000 to 0.6667, a drop of 33.33 points on n=21 tickets. The policy cap is 5 points, so the decision is **NO_GO**. That NO_GO is built into `fake-new` on purpose. It shows the gate fires. It is not a difference between two real models. Expected labels come from the same spec as the fakes, so the rates show that the machinery runs. The full table is [docs/example-report.md](docs/example-report.md). Latency in that run is simulated. Prices in that run are [EST] figures from [config/prices.yaml](config/prices.yaml), not a vendor invoice.
 
 ## Demo
 
@@ -97,15 +97,15 @@ Other profiles, same command shape, `--runs 10 --today 2026-10-17`, measured in 
 
 ### Live compare
 
-La primera corrida live fue el 2026-10-17: `python -m migration_eval compare-live --runs 1`, 63 tickets, el mismo modelo en los dos lados. Fue un auto-compare, no una migración. Queda como **histórica**: la prioridad pasó 37/63 (58,7 %) porque las reglas de prioridad no estaban en el prompt. Eso ya está corregido.
+The first live run was on 2026-10-17: `python -m migration_eval compare-live --runs 1`, 63 tickets, the same model on both sides. It was a self-compare, not a migration. It stays **historical**: priority passed 37/63 (58.7%) because the priority rules were not in the prompt. That is corrected.
 
-El contrato de esa corrida histórica salió bien: 63/63 en schema, categoría, cola y un solo `route_ticket`; inyección 63/63; harmful 0/63. Los 26 fallos fueron solo de prioridad: shipping 7, payment 7, complaint 6, order_status 3, return_request 3. El prompt solo decía `priority: one of low, medium, high`. Las reglas del grader no estaban en el prompt. Este cambio las genera desde la misma tabla que usa el grader (`PRIORITY_RULES` en `spec.py`).
+The contract on that historical run was fine: 63/63 on schema, category, queue, and one `route_ticket`; injection 63/63; harmful 0/63. The 26 failures were priority only: shipping 7, payment 7, complaint 6, order_status 3, return_request 3. The prompt only said `priority: one of low, medium, high`. The grader rules were not in the prompt. This change generates them from the same table the grader uses (`PRIORITY_RULES` in `spec.py`).
 
-La corrida posterior, el mismo día, `compare-live --runs 1`, modelo `grok-4.20-0309-non-reasoning`, fue un auto-compare (el mismo modelo en los dos lados) y una verificación independiente después del fix. Pass 55/63 en old y 56/63 en new. `priority_ok` 56 y 57. Costo real ~US$0,053 por corrida. La estimación del repo, ~US$0,100, ignora tokens cacheados.
+The later run, the same day, `compare-live --runs 1`, model `grok-4.20-0309-non-reasoning`, was a self-compare (the same model on both sides) and an independent check after the fix. Pass 55/63 on old and 56/63 on new. `priority_ok` 56 and 57. Real cost about US$0.053 per run. The repo estimate, about US$0.100, ignores cached tokens.
 
-Esa corrida es un auto-compare, no una migración. Las diferencias entre old y new son ruido de muestreo (29/63 respuestas crudas idénticas; el resto difirió por variación del modelo). No es evidencia de mejora ni de regresión. El McNemar o el GO/NO_GO de un auto-compare no es evidencia de nada.
+That run is a self-compare, not a migration. Differences between old and new are sampling noise (29/63 raw responses were identical; the rest differed by model variation). It is not evidence of improvement or of regression. McNemar or GO/NO_GO on a self-compare is not evidence of anything.
 
-El costo que calcula este repo es tokens de entrada y de salida por la tarifa del entorno. Ignora tokens cacheados, así que sobreestima cuando el proveedor descuenta el cache. En la corrida histórica del 2026-10-17 el estimado fue ~US$0,100 y el costo real fue US$0,053.
+The cost this repo computes is input tokens and output tokens times the environment rate. It ignores cached tokens, so it overestimates when the provider discounts the cache. On the historical 2026-10-17 run the estimate was about US$0.100 and the real cost was US$0.053.
 
 | Date | Command | Sides | What was measured | n | Notes |
 | --- | --- | --- | --- | ---: | --- |
@@ -220,7 +220,7 @@ python -m migration_eval platform-migrations demo --out out/platform-demo
 
 `make setup`, `make lint`, `make test`, `make eval`, `make demo`, `make secretscan`, and `make secretscan-hash` wrap those commands. `make eval-regression` and `make platform-eval-regression` are expected to exit non-zero. `make platform-eval` and `make platform-demo` cover the platform chapter.
 
-Optional live compare, not used above and not run for the tables in this file. It needs `LIVE_MODE=1`, a base URL, an API key, two model names, a spend cap, and a price per million tokens with a price date. The same rate is applied to both models. No price for this mode is stored in the repo. If any of those are missing, the command exits 2 and does not send a request.
+Optional live compare, not used for the tables above (fakes); the live runs are in the Live compare section. It needs `LIVE_MODE=1`, a base URL, an API key, two model names, a spend cap, and a price per million tokens with a price date. The same rate is applied to both models. No price for this mode is stored in the repo. If any of those are missing, the command exits 2 and does not send a request.
 
 ```text
 LIVE_MODE=1 \
