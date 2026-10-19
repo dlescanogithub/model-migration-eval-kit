@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Narrated recording of a real offline run, with number trace, in [docs/demo/](docs/demo/).
+
 ## 0.2.2 - 2026-10-17
 
 - The live prompt's priority lines are generated from `PRIORITY_RULES`, the same table `expected_priority` walks. A test checks that every rule line is in the prompt and that the grader uses that table.
