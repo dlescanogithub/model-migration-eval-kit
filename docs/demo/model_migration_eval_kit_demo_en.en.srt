@@ -1,0 +1,65 @@
+1
+00:00:00,940 --> 00:00:04,600
+A cheaper model is not a migration if it hides a bad slice.
+
+2
+00:00:04,630 --> 00:00:10,220
+Casa Brisa, a fictional shop: sixty-three synthetic tickets, two scripted
+providers.
+
+3
+00:00:11,640 --> 00:00:20,650
+The edge slice falls from one point zero to point six six six seven: thirty-
+three points, on twenty-one tickets. The cap is five.
+
+4
+00:00:21,950 --> 00:00:25,930
+Two gates fail: the edge slice, and the paired test.
+
+5
+00:00:26,000 --> 00:00:30,260
+Eight tickets fail only on the new provider, none only on the old.
+
+6
+00:00:30,300 --> 00:00:37,490
+Harmful tickets: zero. Cost falls from about seven cents to one and a half,
+simulated, on [EST] prices.
+
+7
+00:00:38,830 --> 00:00:46,930
+Other scripted profiles: close says go, flat needs a human, degraded says no-
+go. The gate is not always red.
+
+8
+00:00:48,250 --> 00:00:57,260
+The forced regression: a degraded provider. Fourteen harmful tickets, the gate
+goes red, exit one. That is the expected result.
+
+9
+00:00:58,640 --> 00:01:05,870
+Limits. The no-go is built into the fake provider, on purpose. It is not a gap
+between two actual models.
+
+10
+00:01:05,900 --> 00:01:09,470
+Latency is simulated, prices are [EST].
+
+11
+00:01:09,500 --> 00:01:18,850
+The README's live self-compare, same model on both sides, fifty-five and
+fifty-six of sixty-three, is noise, not evidence. Not rerun here.
+
+12
+00:01:20,000 --> 00:01:25,640
+Decide in hours: freeze the set, count tickets, and a named human approves any
+go.
+
+13
+00:01:25,760 --> 00:01:30,090
+Not covered: live shadow, a live canary, contract review.
+
+14
+00:01:30,150 --> 00:01:38,190
+Savings are [EST], about seventy-nine percent on simulated prices. A cheaper
+model that fails the hard tickets is not a migration.
+

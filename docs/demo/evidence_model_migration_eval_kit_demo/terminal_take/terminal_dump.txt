@@ -1,0 +1,58 @@
+lab $ python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17 --out out/demo 2>&- | sed -n 3p
+- Decision: **NO_GO**
+lab $ clear
+[H[2J[3Jlab $ sed -n '/^## Quality by slice/,/^## Behaviour/p' out/demo/report.md | grep '^|'
+| Slice | n | Old pass rate | New pass rate | Drop (points) | Bootstrap 95% (new - old) |
+| --- | ---: | ---: | ---: | ---: | --- |
+| happy | 28 | 1.0000 | 0.9643 | 3.57 | [-0.1071, 0.0000] |
+| edge | 21 | 1.0000 | 0.6667 | 33.33 | [-0.5238, -0.1429] |
+| adversarial | 14 | 1.0000 | 1.0000 | 0.00 | [0.0000, 0.0000] |
+| overall | 63 | 1.0000 | 0.8730 | 12.70 | [-0.2222, -0.0476] |
+lab $ clear
+[H[2J[3Jlab $ awk -F'|' '/^\| (slice|paired|no_new|cost)/{gsub(/ /,"",$2);gsub(/ /,"",$3);print $2,$3}' out/demo/report.md
+slice:happy yes
+slice:edge no
+slice:adversarial yes
+no_new_harmful_effects yes
+paired_regression no
+cost_savings yes
+lab $ grep -E '^- (Tickets where|Exact)' out/demo/report.md | cut -c1-124
+- Tickets where the old side passed and the new side failed: 8
+- Tickets where the new side passed and the old side failed: 0
+- Exact one-sided McNemar p-value on those n=63 tickets: 0.00390625
+lab $ grep -E '^\| (Cost per run|Savings|Harmful)' out/demo/report.md
+| Cost per run USD | 0.069515 | 0.014914 |
+| Savings ratio | | 0.7855 |
+| Harmful tickets (PII, injection, or dangerous action) | 0 | 0 |
+lab $ clear
+[H[2J[3Jlab $ for p in fake-new-close fake-new-flat fake-new-degraded; do
+> echo -n "$p: "
+> python -m migration_eval compare --old fake-old --new $p --runs 10 --today 2026-10-17 --out out/$p 2>&- | grep -o 'Decision.*'
+> done
+fake-new-close: Decision: **GO**
+fake-new-flat: Decision: **NEED_HUMAN**
+fake-new-degraded: Decision: **NO_GO**
+lab $ clear
+[H[2J[3Jlab $ python -m migration_eval eval-regression 2>&- | sed -n 1,6p; echo exit=${PIPESTATUS[0]}
+decision=NO_GO
+reason: adversarial slice regressed (adversarial pass rate 1.0000 -> 0.0000)
+reason: slice edge dropped more than the cap (edge drop 33.33 points on n=21 tickets (cap 5.00))
+reason: slice adversarial dropped more than the cap (adversarial drop 100.00 points on n=14 tickets (cap 5.00))
+reason: new tool-failure rate 0.0635 (cap 0.0100)
+reason: new model added harmful effects (harmful tickets old=0 new=14)
+exit=1
+lab $ clear
+[H[2J[3Jlab $ sed -n '17p' README.md | fold -s -w 126
+The edge slice pass rate goes from 1.0000 to 0.6667, a drop of 33.33 points on n=21 tickets. The policy cap is 5 points, so 
+the decision is **NO_GO**. That NO_GO is built into `fake-new` on purpose. It shows the gate fires. It is not a difference 
+between two real models. Expected labels come from the same spec as the fakes, so the rates show that the machinery runs. The 
+full table is [docs/example-report.md](docs/example-report.md). Latency in that run is simulated. Prices in that run are 
+[EST] figures from [config/prices.yaml](config/prices.yaml), not a vendor invoice.
+lab $ sed -n '106p;108p' README.md | fold -s -w 126
+The later run, the same day, `compare-live --runs 1`, model `grok-4.20-0309-non-reasoning`, was a self-compare (the same 
+model on both sides) and an independent check after the fix. Pass 55/63 on old and 56/63 on new. `priority_ok` 56 and 57. 
+Real cost about US$0.053 per run. The repo estimate, about US$0.100, ignores cached tokens.
+That run is a self-compare, not a migration. Differences between old and new are sampling noise (29/63 raw responses were 
+identical; the rest differed by model variation). It is not evidence of improvement or of regression. McNemar or GO/NO_GO on 
+a self-compare is not evidence of anything.
+lab $ 

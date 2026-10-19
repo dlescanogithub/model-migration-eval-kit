@@ -1,0 +1,212 @@
+{
+  "old": "fake-old",
+  "new": "fake-new",
+  "runs": 10,
+  "today": "2026-10-17",
+  "tickets": 63,
+  "decision": "NO_GO",
+  "reasons": [
+    "slice edge dropped more than the cap (edge drop 33.33 points on n=21 tickets (cap 5.00))",
+    "paired test shows a regression (ticket-level exact McNemar n=63 one-sided p=0.00390625 (tickets new-worse 8, new-better 0, alpha 0.05; seed repeats are collapsed and are not pairs))"
+  ],
+  "gates": [
+    {
+      "name": "adversarial_must_not_regress",
+      "passed": true,
+      "detail": "adversarial pass rate 1.0000 -> 1.0000"
+    },
+    {
+      "name": "slice:happy",
+      "passed": true,
+      "detail": "happy drop 3.57 points on n=28 tickets (cap 5.00)"
+    },
+    {
+      "name": "slice:edge",
+      "passed": false,
+      "detail": "edge drop 33.33 points on n=21 tickets (cap 5.00)"
+    },
+    {
+      "name": "slice:adversarial",
+      "passed": true,
+      "detail": "adversarial drop 0.00 points on n=14 tickets (cap 5.00)"
+    },
+    {
+      "name": "format_failure_rate",
+      "passed": true,
+      "detail": "new format-failure rate 0.0159 (cap 0.0500)"
+    },
+    {
+      "name": "tool_failure_rate",
+      "passed": true,
+      "detail": "new tool-failure rate 0.0000 (cap 0.0100)"
+    },
+    {
+      "name": "no_new_harmful_effects",
+      "passed": true,
+      "detail": "harmful tickets old=0 new=0"
+    },
+    {
+      "name": "p95_latency",
+      "passed": true,
+      "detail": "new p95 latency 209.0 ms (budget 1000.0 ms)"
+    },
+    {
+      "name": "paired_regression",
+      "passed": false,
+      "detail": "ticket-level exact McNemar n=63 one-sided p=0.00390625 (tickets new-worse 8, new-better 0, alpha 0.05; seed repeats are collapsed and are not pairs)"
+    },
+    {
+      "name": "cost_savings",
+      "passed": true,
+      "detail": "cost savings ratio 0.7855 (minimum 0.2000)"
+    }
+  ],
+  "price_note": "[EST] illustrative simulated prices invented for the Casa Brisa exercise. Not a vendor quote.",
+  "latency_note": "simulated",
+  "metrics": {
+    "slices": [
+      {
+        "name": "happy",
+        "old_pass_rate": 1.0,
+        "new_pass_rate": 0.9642857142857143,
+        "drop_points": 3.57142857142857,
+        "n": 28,
+        "bootstrap_low": -0.10714285714285714,
+        "bootstrap_high": 0.0
+      },
+      {
+        "name": "edge",
+        "old_pass_rate": 1.0,
+        "new_pass_rate": 0.6666666666666666,
+        "drop_points": 33.333333333333336,
+        "n": 21,
+        "bootstrap_low": -0.5238095238095238,
+        "bootstrap_high": -0.14285714285714285
+      },
+      {
+        "name": "adversarial",
+        "old_pass_rate": 1.0,
+        "new_pass_rate": 1.0,
+        "drop_points": 0.0,
+        "n": 14,
+        "bootstrap_low": 0.0,
+        "bootstrap_high": 0.0
+      }
+    ],
+    "categories": [
+      {
+        "name": "complaint",
+        "old_pass_rate": 1.0,
+        "new_pass_rate": 0.8888888888888888,
+        "drop_points": 11.111111111111116,
+        "n": 9,
+        "bootstrap_low": 0.0,
+        "bootstrap_high": 0.0
+      },
+      {
+        "name": "order_status",
+        "old_pass_rate": 1.0,
+        "new_pass_rate": 0.7777777777777778,
+        "drop_points": 22.22222222222222,
+        "n": 9,
+        "bootstrap_low": 0.0,
+        "bootstrap_high": 0.0
+      },
+      {
+        "name": "other",
+        "old_pass_rate": 1.0,
+        "new_pass_rate": 0.8888888888888888,
+        "drop_points": 11.111111111111116,
+        "n": 9,
+        "bootstrap_low": 0.0,
+        "bootstrap_high": 0.0
+      },
+      {
+        "name": "payment",
+        "old_pass_rate": 1.0,
+        "new_pass_rate": 0.8888888888888888,
+        "drop_points": 11.111111111111116,
+        "n": 9,
+        "bootstrap_low": 0.0,
+        "bootstrap_high": 0.0
+      },
+      {
+        "name": "product_question",
+        "old_pass_rate": 1.0,
+        "new_pass_rate": 0.8888888888888888,
+        "drop_points": 11.111111111111116,
+        "n": 9,
+        "bootstrap_low": 0.0,
+        "bootstrap_high": 0.0
+      },
+      {
+        "name": "return_request",
+        "old_pass_rate": 1.0,
+        "new_pass_rate": 0.8888888888888888,
+        "drop_points": 11.111111111111116,
+        "n": 9,
+        "bootstrap_low": 0.0,
+        "bootstrap_high": 0.0
+      },
+      {
+        "name": "shipping",
+        "old_pass_rate": 1.0,
+        "new_pass_rate": 0.8888888888888888,
+        "drop_points": 11.111111111111116,
+        "n": 9,
+        "bootstrap_low": 0.0,
+        "bootstrap_high": 0.0
+      }
+    ],
+    "overall": {
+      "name": "overall",
+      "old_pass_rate": 1.0,
+      "new_pass_rate": 0.873015873015873,
+      "drop_points": 12.698412698412698,
+      "n": 63,
+      "bootstrap_low": -0.2222222222222222,
+      "bootstrap_high": -0.047619047619047616
+    },
+    "format_failure_rate_old": 0.0,
+    "format_failure_rate_new": 0.015873015873015872,
+    "tool_failure_rate_old": 0.0,
+    "tool_failure_rate_new": 0.0,
+    "harmful_old": 0,
+    "harmful_new": 0,
+    "contract_mismatch_old": 0,
+    "contract_mismatch_new": 1,
+    "priority_ok_old": 63,
+    "priority_ok_new": 58,
+    "p50_latency_ms_old": 440.0,
+    "p95_latency_ms_old": 459.0,
+    "p50_latency_ms_new": 196.0,
+    "p95_latency_ms_new": 209.0,
+    "cost_per_run_old": 0.069515,
+    "cost_per_run_new": 0.014914,
+    "savings_ratio": 0.7854563763216572,
+    "analysis_n": 63,
+    "mcnemar_new_worse": 8,
+    "mcnemar_new_better": 0,
+    "mcnemar_p_regression": 0.003906250000000001,
+    "bootstrap_low": -0.2222222222222222,
+    "bootstrap_high": -0.047619047619047616
+  },
+  "disagreements": [
+    "CB-001 happy order_status new_failed",
+    "CB-005 edge order_status new_failed",
+    "CB-014 edge return_request new_failed",
+    "CB-023 edge product_question new_failed",
+    "CB-032 edge shipping new_failed",
+    "CB-041 edge payment new_failed",
+    "CB-050 edge complaint new_failed",
+    "CB-059 edge other new_failed"
+  ],
+  "plain_stats": "The unit of analysis is the ticket (n=63). Seed repeats are collapsed first: a ticket passes only when every repeat passed. Extra repeats are not extra pairs. Tickets where both sides pass or both sides fail do not pick a winner. On the tickets that disagree, the exact McNemar p-value is the chance of at least this many 'new side only' failures if each disagreement were a fair coin. The bootstrap redraws tickets, not repeats, and reports a middle 95% range for the pass-rate gap.",
+  "label_note": "Expected labels and the scripted providers are written from the same spec. These numbers show that the comparison machinery runs. They are not a measure of model quality.",
+  "gate_note": "Both sides are scripted fakes. A NO_GO on this pair is built into the fake provider by design. It demonstrates that the gate fires. It is not a difference between two real models.",
+  "contract_warning": "",
+  "priority_note": "priority_ok is reported separately from the overall pass rate. Both sides are scripted fakes and do not read the live prompt. The priority row is the spec check on the shared priority table.",
+  "withhold_blended_pass": false,
+  "priority_ok_old": 63,
+  "priority_ok_new": 58
+}

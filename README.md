@@ -249,6 +249,7 @@ The committed report was produced with the compare command above. Tests check th
 
 ## Docs
 
+- [docs/demo/](docs/demo/) — Narrated recording of a real offline run, with number trace
 - [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) — walkthrough in rioplatense Spanish
 - [docs/platform-migrations/README.md](docs/platform-migrations/README.md) — platform chapter (inventory, waves, parity, cutover, rollback)
 - [docs/BUSINESS_CASE.md](docs/BUSINESS_CASE.md)
