@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- README TL;DR under the title: the offline check, the measured scripted NO_GO, and the one-command demo.
 - Narrated recording of a real offline run, with number trace, in [docs/demo/](docs/demo/).
 
 ## 0.2.2 - 2026-10-17

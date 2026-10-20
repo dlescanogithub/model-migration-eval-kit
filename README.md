@@ -2,6 +2,12 @@
 
 [![ci](https://github.com/dlescanogithub/model-migration-eval-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/dlescanogithub/model-migration-eval-kit/actions/workflows/ci.yml)
 
+**TL;DR**
+
+- Offline check for a fictional shop: same 63 synthetic tickets, two scripted providers, and a go/no-go, so a cheaper model cannot hide a bad slice. It does not call a paid model and it does not move production traffic.
+- Measured on 2026-10-17, package 0.2.2, Python 3.12.3: the edge slice pass rate goes from 1.0000 to 0.6667, a drop of 33.33 points on n=21 tickets (policy cap 5 points), so the decision is **NO_GO**. That NO_GO is built into `fake-new` to show the gate fires. It is not a difference between two real models.
+- One command, no API key, cost zero: `python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17 --out out/demo` (`make demo`). Walkthrough: [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md).
+
 Offline check for a fictional shop, Casa Brisa: same 63 synthetic tickets, two scripted providers, a go/no-go. It does not call a paid model and it does not move production traffic.
 
 ## Problem and result
