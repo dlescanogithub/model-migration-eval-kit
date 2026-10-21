@@ -170,6 +170,26 @@ The business problem is a cutoff or a price change on a model that already triag
 
 Deployment Strategist conversation: start with discovery ([docs/DISCOVERY.md](docs/DISCOVERY.md)), not with a model name. Run the old and new systems on the same frozen set while both are still available (shadow, then a gate). The harness owner owns the golden set, the thresholds, and the report. The support lead owns the label rules. A named human owns the GO. Finance owns the cutoff date. Nobody in this repo owns a production router, because there isn't one.
 
+## Business value
+
+> **Synthetic example.** The customer below ("mid-size fintech") is fictional, and every business figure is a synthetic assumption, tagged **[SYN]**. Figures tagged **[REPO]** come from this repo's committed report. The value plan is *inspired by* the AWS Business Value Realization (BVR) framework. It is not an official AWS template, and I do not hold the AWS BVR Competency, which is awarded to AWS partner companies.
+
+**What the repo measures [REPO]:** 63 synthetic tickets (28 happy / 21 edge / 14 adversarial), invariant-based pass rates per slice, harmful tickets, format and tool failures, simulated p95, and simulated cost. A policy then returns GO / NO_GO / NEED_HUMAN. In the scripted demo, the simulated cost per run drops 78.55% (USD 0.069515 → 0.014914, illustrative [EST] prices). The edge slice drops 33.33 points (n=21, cap 5), so the decision is **NO_GO**. A cheaper model that misses hard tickets is not a migration.
+
+**How a team would track value [SYN]:**
+
+| KPI | Category | Baseline | Target |
+|---|---|---|---|
+| Person-hours per model-migration evaluation | Productivity | 80 h [SYN] | ≤16 h [SYN] |
+| Time from request to signed ADR | Agility | 10 business days [SYN] | ≤2 days [SYN] |
+| Max slice drop on an approved swap | Resilience | not measured [SYN] | ≤5 pts; 0 on adversarial [REPO policy] |
+| Harmful tickets on the adversarial slice | Risk | not measured [SYN] | 0 [REPO policy] |
+| Model swaps gated before production | Adoption | 0% [SYN] | 100% [SYN] |
+| Misrouting incidents caused by a model swap | Resilience | 1/yr [SYN] | 0/yr [SYN] |
+| Model cost per 1k tickets (only after a GO) | Cost | USD 133 [SYN] | −40% [SYN] |
+
+**Year-1 ROI [SYN]:** ROI = (benefit − cost) / cost = (36,880 − 8,030) / 8,030 ≈ **359%**, payback ≈ **2 months**. In a conservative case, with no GO all year and no model savings, ROI is ≈120% and payback ≈4.5 months. Most of the value comes from avoiding a bad swap and deciding faster, not from the cheaper model. Full plan and assumptions: [docs/BUSINESS_VALUE.md](docs/BUSINESS_VALUE.md).
+
 ## Decisions
 
 - [docs/adr/0001-offline-harness.md](docs/adr/0001-offline-harness.md)
@@ -259,6 +279,7 @@ The committed report was produced with the compare command above. Tests check th
 - [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) — walkthrough in rioplatense Spanish
 - [docs/platform-migrations/README.md](docs/platform-migrations/README.md) — platform chapter (inventory, waves, parity, cutover, rollback)
 - [docs/BUSINESS_CASE.md](docs/BUSINESS_CASE.md)
+- [docs/BUSINESS_VALUE.md](docs/BUSINESS_VALUE.md) — synthetic value-realization plan (fictional customer; inspired by the AWS BVR framework, not an official template)
 - [docs/DISCOVERY.md](docs/DISCOVERY.md)
 - [docs/SCOPE.md](docs/SCOPE.md)
 - [docs/RISKS.md](docs/RISKS.md)
