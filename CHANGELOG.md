@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.3 - 2026-10-22
+
 - Business value section in the README, and the synthetic value plan in [docs/BUSINESS_VALUE.md](docs/BUSINESS_VALUE.md). That plan is in English. Invented business assumptions are tagged **[SYN]**.
 - README opening is a three-line Start here: what the offline check proves, the one-command demo, and the link to [docs/demo/](docs/demo/).
 - README Tests section: **MEASURED** 2026-10-22, Python 3.12.3, `python -m pytest`, 85 passed, line coverage 91.82% (3,423 of 3,728 statements). The same run's combined statement and branch total was 88.62%.
