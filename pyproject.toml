@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "model-migration-eval-kit"
-version = "0.2.2"
+version = "0.2.3"
 description = "Decide whether to migrate or deprecate an LLM using a synthetic ticket-triage golden set, invariant checks, and a go/no-go policy."
 readme = "README.md"
 requires-python = ">=3.11"
