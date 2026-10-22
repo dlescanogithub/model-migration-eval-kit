@@ -1,125 +1,127 @@
-# Value Realization Plan: adopción de `model-migration-eval-kit`
+# Value Realization Plan: adoption of `model-migration-eval-kit`
 
-> **Aviso importante**
-> - **Cliente ficticio.** "Fintech mediana" es una empresa **inventada** para este ejercicio. No representa a ningún cliente ni empleador real.
-> - **Inspirado en el framework AWS Business Value Realization (BVR)**: plan de realización de valor, KPIs con umbral por etapa ("pit stops") y confirmación del cliente. **No es una plantilla oficial de AWS** (la plantilla oficial del VRP no es pública) y **no tengo la AWS BVR Competency**, que se otorga a empresas partner de AWS, no a personas.
-> - Etiquetas: **[REPO]** = número que sale del repo (medido o configurado ahí, con su fuente). **[SINTÉTICO]** = supuesto de negocio inventado para el ejercicio. **[REPO-EST]** = cifra que el propio repo marca como estimación ilustrativa.
-> - Repo: https://github.com/dlescanogithub/model-migration-eval-kit (commit `85b52b3`, 19/10/2026). Reproduje `compare --old fake-old --new fake-new --runs 10 --today 2026-10-17` y los 85 tests en local el 21/10/2026: dieron los mismos números que el reporte commiteado.
+> **Important notice**
+> - **Fictional customer.** "Mid-size fintech" is an **invented** company for this exercise. It does not represent any real customer or employer.
+> - **Inspired by the AWS Business Value Realization (BVR) framework**: a value-realization plan, KPIs with a threshold per stage ("pit stops"), and customer confirmation. **It is not an official AWS template** (the official VRP template is not public) and **I do not hold the AWS BVR Competency**, which is awarded to AWS partner companies, not to individuals.
+> - Labels: **[REPO]** = a number that comes out of the repo (measured or configured there, with its source). **[SYN]** = an invented business assumption for this exercise. **[REPO-EST]** = a figure the repo itself marks as an illustrative estimate.
+> - Repo: https://github.com/dlescanogithub/model-migration-eval-kit (commit `85b52b3`, 2026-10-19). I reproduced `compare --old fake-old --new fake-new --runs 10 --today 2026-10-17` and the 85 tests locally on 2026-10-21: they produced the same numbers as the committed report.
 
 ---
 
-## 0. Qué hace realmente el kit (base técnica, [REPO])
+## 0. What the kit actually does (technical basis, [REPO])
 
-- Corre **un mismo golden set de 63 tickets sintéticos** (28 happy, 21 edge, 14 adversarial) [REPO] contra un proveedor "viejo" y uno "nuevo". Puntúa **invariantes**: schema, categoría, prioridad, cola permitida, resistencia a inyección, no repetir datos de contacto y exactamente una tool `route_ticket`. No compara texto exacto.
-- Aplica una **política go/no-go** configurable (`config/policy.yaml`) [REPO]:
-  - caída máxima por slice: 5 pp;
-  - el slice adversarial no puede empeorar;
-  - formato ≤0,05 y tool failures ≤0,01;
+- It runs **one and the same golden set of 63 synthetic tickets** (28 happy, 21 edge, 14 adversarial) [REPO] against an "old" provider and a "new" one. It scores **invariants**: schema, category, priority, allowed queue, resistance to injection, no repeated contact data, and exactly one `route_ticket` tool. It does not compare exact text.
+- It applies a configurable **go/no-go policy** (`config/policy.yaml`) [REPO]:
+  - maximum drop per slice: 5 pp;
+  - the adversarial slice cannot get worse;
+  - format ≤0.05 and tool failures ≤0.01;
   - p95 ≤1000 ms;
-  - McNemar con α=0,05;
-  - ahorro <0,20 → NEED_HUMAN.
-- Devuelve **GO / NO_GO / NEED_HUMAN** y un borrador de ADR. **Un humano aprueba**: la herramienta no aprueba ni rutea tráfico.
-- Demo medida [REPO]: el slice edge baja de 1,0000 a 0,6667 (−33,33 pp, n=21) → **NO_GO**, aunque el costo simulado por corrida cae de USD 0,069515 a 0,014914 (ratio de ahorro 0,7855, precios [REPO-EST]). McNemar: 8 tickets peores y 0 mejores, p=0,00390625.
-  - El NO_GO está **guionado a propósito** en `fake-new` para mostrar que el gate funciona. No es una comparación entre modelos reales.
-- Perfiles de control [REPO]: `fake-new-close` → GO; `fake-new-flat` → NEED_HUMAN; `fake-new-degraded` → NO_GO (14 tickets dañinos).
-- Corrida live [REPO]: es un **self-compare** (el mismo modelo de los dos lados), no una migración. Costo real ≈ USD 0,053 por corrida contra ≈ USD 0,100 estimado por el repo, que no descuenta los tokens cacheados.
-- Lo que el repo **no** hace [REPO]: shadow ni canary sobre tráfico real, labels humanos, revisión de contratos.
+  - McNemar with α=0.05;
+  - savings <0.20 → NEED_HUMAN.
+- It returns **GO / NO_GO / NEED_HUMAN** and an ADR draft. **A human approves**: the tool neither approves nor routes traffic.
+- Measured demo [REPO]: the edge slice falls from 1.0000 to 0.6667 (−33.33 pp, n=21) → **NO_GO**, even though the simulated cost per run falls from USD 0.069515 to 0.014914 (savings ratio 0.7855, prices [REPO-EST]). McNemar: 8 tickets worse and 0 better, p=0.00390625.
+  - The NO_GO is **scripted on purpose** in `fake-new` to show that the gate works. It is not a comparison between real models.
+- Control profiles [REPO]: `fake-new-close` → GO; `fake-new-flat` → NEED_HUMAN; `fake-new-degraded` → NO_GO (14 harmful tickets).
+- Live run [REPO]: it is a **self-compare** (the same model on both sides), not a migration. Real cost ≈ USD 0.053 per run versus ≈ USD 0.100 estimated by the repo, which does not discount cached tokens.
+- What the repo does **not** do [REPO]: shadow or canary on real traffic, human labels, contract review.
 
 ---
 
-## 1. Desafío de negocio [SINTÉTICO]
+## 1. Business challenge [SYN]
 
-La fintech mediana ficticia clasifica con un LLM unos **30.000 tickets de soporte por mes** [SINTÉTICO] (categoría, prioridad, cola). Hay dos presiones:
+The fictional mid-size fintech classifies about **30,000 support tickets per month** [SYN] with an LLM (category, priority, queue). There are two pressures:
 
-1. El proveedor anuncia el **retiro del modelo actual** con fecha de corte.
-2. Aparece un modelo **más barato**.
+1. The provider announces **retirement of the current model** with a cutoff date.
+2. A **cheaper** model appears.
 
-Hoy cada cambio de modelo se decide con pruebas manuales ad hoc: ~2 personas × 1 semana ≈ **80 h por evaluación** [SINTÉTICO], sin métricas por segmento y sin rollback ensayado. Esperan **~4 cambios de modelo por año** [SINTÉTICO]. El año anterior, un cambio "por precio" mandó tickets de cobros fallidos a la cola equivocada (**1 incidente**, costo estimado **USD 10.000** [SINTÉTICO]).
+Today each model change is decided with ad hoc manual tests: ~2 people × 1 week ≈ **80 h per evaluation** [SYN], with no per-segment metrics and no rehearsed rollback. They expect **~4 model changes per year** [SYN]. The previous year, a change "for price" sent failed-collection tickets to the wrong queue (**1 incident**, estimated cost **USD 10,000** [SYN]).
 
-## 2. Objetivos y sponsor [SINTÉTICO]
+## 2. Objectives and sponsor [SYN]
 
-- **Sponsor ejecutivo:** CTO de la fintech ficticia. **Dueño del GO:** Head of Support. **Dueño de la fecha de corte:** Finanzas. Es la misma división de roles que propone el repo [REPO].
-- O1. Decidir cada migración de modelo **en horas o pocos días, no en semanas**, con evidencia reproducible.
-- O2. **Cero regresiones silenciosas** en los tickets difíciles y en los adversariales.
-- O3. Capturar el ahorro de modelos más baratos **solo cuando el gate da GO** y un humano lo aprueba.
-- O4. Llegar a cada fecha de corte con la migración ya decidida y el rollback ensayado.
+- **Executive sponsor:** CTO of the fictional fintech. **GO owner:** Head of Support. **Cutoff-date owner:** Finance. This is the same role split the repo proposes [REPO].
+- O1. Decide each model migration **in hours or a few days, not in weeks**, with reproducible evidence.
+- O2. **Zero silent regressions** on the hard tickets and on the adversarial ones.
+- O3. Capture the savings from cheaper models **only when the gate returns GO** and a human approves it.
+- O4. Reach each cutoff date with the migration already decided and the rollback rehearsed.
 
-## 3. KPIs del plan
+## 3. Plan KPIs
 
-| KPI | Categoría (BVR / Cloud Value Framework) | Baseline | Objetivo | Cómo se mide | Etapa |
+| KPI | Category (BVR / Cloud Value Framework) | Baseline | Target | How it is measured | Stage |
 |---|---|---|---|---|---|
-| Horas-persona por evaluación de migración | Productividad | 80 h [SINTÉTICO] | ≤16 h [SINTÉTICO] | Registro de horas por migración, desde el pedido hasta el ADR firmado | 1. Activación |
-| Tiempo de decisión (pedido → ADR firmado) | Agilidad de negocio | 10 días hábiles [SINTÉTICO] | ≤2 días hábiles [SINTÉTICO] | Fechas del ticket interno vs. la fecha del ADR (`adr.py` genera el borrador) [REPO] | 1. Activación |
-| Golden set etiquetado por personas | Resiliencia operativa | 63 tickets sintéticos con labels generados por la spec [REPO]; 0 con labels humanos [SINTÉTICO] | ≥300 tickets con labels humanos, ≥20% edge/adversarial [SINTÉTICO] | Conteo y distribución por slice en el golden set | 1. Activación |
-| Caída máxima por slice en una migración aprobada | Resiliencia operativa | Sin medición por slice [SINTÉTICO] | ≤5 pp en todos los slices; 0 pp en adversarial [REPO: `policy.yaml`] | `report.json`: tabla de slices y gates | 2. Escala |
-| Tickets dañinos (inyección obedecida, eco de datos, acción peligrosa) | Resiliencia / riesgo | Sin medición [SINTÉTICO] | 0, y nunca mayor que el modelo actual [REPO: política "must not increase"] | Conteo `harmful` del reporte | 2. Escala |
-| % de cambios de modelo que pasan por el gate antes de producción | Adopción | 0% [SINTÉTICO] | 100% [SINTÉTICO] | Cambios en la config de ruteo vs. reportes del kit en CI | 2. Escala |
-| Rollback ensayado antes de cada canary | Resiliencia operativa | 0 de 4 [SINTÉTICO] | 4 de 4 [SINTÉTICO] | Audit JSONL del canary (`canary.py`) [REPO]. Ojo: el canary del repo es sintético | 2. Escala |
-| Costo de modelo por 1.000 tickets | Ahorro de costos | USD 133 [SINTÉTICO] (USD 4.000/mes ÷ 30.000) | −40% (≈USD 80), **solo con GO** [SINTÉTICO] | Factura del proveedor con cache incluido; no la estimación del repo, que sobreestima [REPO] | 3. Retención de valor |
-| Incidentes de mal ruteo atribuibles a un cambio de modelo | Resiliencia operativa | 1 por año [SINTÉTICO] | 0 por año [SINTÉTICO] | Post-mortems de soporte | 3. Retención de valor |
-| Migraciones cerradas antes de la fecha de corte | Agilidad / continuidad | Sin control [SINTÉTICO] | 100%, con aviso ≥14 días antes [REPO: `warn_within_days: 14`] | `deprecation-check` con la fecha del día [REPO] | 3. Retención de valor |
+| Person-hours per migration evaluation | Productivity | 80 h [SYN] | ≤16 h [SYN] | Hours log per migration, from the request until the signed ADR | 1. Activation |
+| Decision time (request → signed ADR) | Business agility | 10 business days [SYN] | ≤2 business days [SYN] | Dates on the internal ticket vs. the ADR date (`adr.py` generates the draft) [REPO] | 1. Activation |
+| Golden set labelled by people | Operational resilience | 63 synthetic tickets with labels generated by the spec [REPO]; 0 with human labels [SYN] | ≥300 tickets with human labels, ≥20% edge/adversarial [SYN] | Count and slice distribution in the golden set | 1. Activation |
+| Maximum drop per slice on an approved migration | Operational resilience | No per-slice measurement [SYN] | ≤5 pp on every slice; 0 pp on adversarial [REPO: `policy.yaml`] | `report.json`: slice table and gates | 2. Scale |
+| Harmful tickets (obeyed injection, data echo, dangerous action) | Resilience / risk | No measurement [SYN] | 0, and never higher than the current model [REPO: policy "must not increase"] | `harmful` count in the report | 2. Scale |
+| % of model changes that pass through the gate before production | Adoption | 0% [SYN] | 100% [SYN] | Routing-config changes vs. kit reports in CI | 2. Scale |
+| Rollback rehearsed before each canary | Operational resilience | 0 of 4 [SYN] | 4 of 4 [SYN] | Canary JSONL audit (`canary.py`) [REPO]. Note: the repo's canary is synthetic | 2. Scale |
+| Model cost per 1,000 tickets | Cost savings | USD 133 [SYN] (USD 4,000/month ÷ 30,000) | −40% (≈USD 80), **only with GO** [SYN] | Provider invoice with cache included; not the repo estimate, which overestimates [REPO] | 3. Value retention |
+| Misrouting incidents attributable to a model change | Operational resilience | 1 per year [SYN] | 0 per year [SYN] | Support post-mortems | 3. Value retention |
+| Migrations closed before the cutoff date | Agility / continuity | No control [SYN] | 100%, with notice ≥14 days before [REPO: `warn_within_days: 14`] | `deprecation-check` with the date of the day [REPO] | 3. Value retention |
 
-> Nota: el repo mide pass rate por slice, harmful, formato, tool failures, latencia simulada y costo simulado. **No** mide horas-persona, tiempo de decisión, incidentes ni costo real de producción. Esos KPIs de negocio los tendría que medir el cliente.
+> Note: the repo measures pass rate per slice, harmful, format, tool failures, simulated latency, and simulated cost. It does **not** measure person-hours, decision time, incidents, or real production cost. The customer would have to measure those business KPIs.
 
-## 4. Etapas ("pit stops") con criterios de salida [SINTÉTICO, estructura inspirada en BVR]
+## 4. Stages ("pit stops") with exit criteria [SYN, structure inspired by BVR]
 
-1. **Activación** (semanas 1–3)
-   - Trabajo: adaptar `spec.py` a las categorías y colas de la fintech, armar el golden set con labels humanos y correr el primer `compare` offline con el modelo actual vs. el candidato.
-   - *Salida:* golden set ≥300 tickets; primer reporte leído y ADR firmado por el Head of Support; evaluación ≤16 h.
-2. **Uso a escala** (meses 2–3)
-   - Trabajo: el gate corre en CI ante cada modelo candidato; canary con rollback ensayado.
-   - Hay que **construir** el shadow y el canary sobre tráfico real: en el repo son solo diseño [REPO].
-   - *Salida:* 100% de los cambios pasan por el gate; 0 tickets dañinos; caída ≤5 pp por slice.
-3. **Retención de valor** (meses 4–12)
-   - Trabajo: revisión trimestral de KPIs y recalibración del golden set con tickets nuevos.
-   - *Salida:* 0 incidentes de mal ruteo; migraciones cerradas antes del corte; ahorro de modelo verificado en la factura.
+1. **Activation** (weeks 1–3)
+   - Work: adapt `spec.py` to the fintech's categories and queues, build the golden set with human labels, and run the first offline `compare` of the current model vs. the candidate.
+   - *Exit:* golden set ≥300 tickets; first report read and ADR signed by the Head of Support; evaluation ≤16 h.
+2. **Use at scale** (months 2–3)
+   - Work: the gate runs in CI for each candidate model; canary with rehearsed rollback.
+   - Shadow and canary on real traffic have to be **built**: in the repo they are design only [REPO].
+   - *Exit:* 100% of changes pass through the gate; 0 harmful tickets; drop ≤5 pp per slice.
+3. **Value retention** (months 4–12)
+   - Work: quarterly KPI review and recalibration of the golden set with new tickets.
+   - *Exit:* 0 misrouting incidents; migrations closed before the cutoff; model savings verified on the invoice.
 
-**Confirmación del cliente:** al cierre de cada etapa, el sponsor (CTO) y Finanzas firman una nota que confirma los valores de KPI con la evidencia adjunta (reportes, ADR, facturas). Esto replica la idea de BVR de que **el cliente atesta los resultados**.
+**Customer confirmation:** at the close of each stage, the sponsor (CTO) and Finance sign a note confirming the KPI values with the evidence attached (reports, ADR, invoices). This replicates the BVR idea that **the customer attests to the results**.
 
-## 5. ROI (año 1) [TODO SINTÉTICO]
+## 5. ROI (year 1) [SYN]
 
-**Fórmulas:** ROI = (beneficio − costo) / costo · Payback (meses) = inversión inicial / beneficio neto mensual
+Every figure in this section is [SYN].
 
-**Supuestos de beneficio** [SINTÉTICO]:
+**Formulas:** ROI = (benefit − cost) / cost · Payback (months) = initial investment / net monthly benefit
 
-| Concepto | Cálculo | USD/año |
+**Benefit assumptions** [SYN]:
+
+| Item | Calculation | USD/year |
 |---|---|---:|
-| A. Ahorro de modelo (solo si hay GO) | USD 4.000/mes × 12 × 40% | 19.200 |
-| B. Horas de evaluación evitadas | (80 − 16) h × 4 migraciones × USD 30/h | 7.680 |
-| C. Incidente de mal ruteo evitado | 1 × USD 10.000 | 10.000 |
-| **Beneficio total** | | **36.880** |
+| A. Model savings (only if there is a GO) | USD 4,000/month × 12 × 40% | 19,200 |
+| B. Evaluation hours avoided | (80 − 16) h × 4 migrations × USD 30/h | 7,680 |
+| C. Misrouting incident avoided | 1 × USD 10,000 | 10,000 |
+| **Total benefit** | | **36,880** |
 
-**Supuestos de costo** [SINTÉTICO]:
+**Cost assumptions** [SYN]:
 
-| Concepto | Cálculo | USD |
+| Item | Calculation | USD |
 |---|---|---:|
-| Adaptación e integración (inversión inicial) | 120 h × USD 45/h | 5.400 |
-| Etiquetado humano del golden set (inversión inicial) | 300 tickets × 3 min = 15 h × USD 30/h | 450 |
-| Corridas live de evaluación | 4 migraciones × 10 corridas × USD 0,50 | 20 |
-| Mantenimiento | 4 h/mes × USD 45 × 12 | 2.160 |
-| **Costo total** | | **8.030** |
+| Adaptation and integration (initial investment) | 120 h × USD 45/h | 5,400 |
+| Human labelling of the golden set (initial investment) | 300 tickets × 3 min = 15 h × USD 30/h | 450 |
+| Live evaluation runs | 4 migrations × 10 runs × USD 0.50 | 20 |
+| Maintenance | 4 h/month × USD 45 × 12 | 2,160 |
+| **Total cost** | | **8,030** |
 
-**Resultados** [SINTÉTICO]:
+**Results** [SYN]:
 
-| Escenario | Beneficio | ROI | Payback |
+| Scenario | Benefit | ROI | Payback |
 |---|---:|---:|---:|
-| Base (A+B+C) | 36.880 | **(36.880 − 8.030)/8.030 ≈ 359%** | 5.850 / ((36.880 − 2.160 − 20)/12 = 2.892/mes) ≈ **2,0 meses** |
-| Conservador: el gate da NO_GO todo el año, sin ahorro de modelo (B+C) | 17.680 | ≈ 120% | ≈ 4,5 meses |
-| Mínimo: solo horas evitadas (B) | 7.680 | ≈ −4% | no recupera en el año |
+| Base (A+B+C) | 36,880 | **(36,880 − 8,030)/8,030 ≈ 359%** | 5,850 / ((36,880 − 2,160 − 20)/12 = 2,892/month) ≈ **2.0 months** |
+| Conservative: the gate returns NO_GO all year, with no model savings (B+C) | 17,680 | ≈ 120% | ≈ 4.5 months |
+| Minimum: avoided hours only (B) | 7,680 | ≈ −4% | does not pay back within the year |
 
-**Lectura honesta:**
-- La mayor parte del valor no viene del ahorro de modelo. Viene de **evitar una mala migración** y de **decidir más rápido**. Ese es justamente el argumento del repo: un modelo más barato que falla en los tickets difíciles no es una migración.
-- Si no hay incidentes que evitar y el gate nunca da GO, el kit apenas empata su costo en el año 1.
-- El ratio de ahorro de 0,7855 del repo **no se usa** como supuesto, porque sale de precios ilustrativos [REPO-EST]. El 40% también es inventado y hay que reemplazarlo por precios públicos, con URL y fecha.
+**Honest reading:**
+- Most of the value does not come from model savings. It comes from **avoiding a bad migration** and from **deciding faster**. That is exactly the repo's argument: a cheaper model that fails on the hard tickets is not a migration.
+- If there are no incidents to avoid and the gate never returns GO, the kit barely breaks even with its cost in year 1.
+- The repo's savings ratio of 0.7855 **is not used** as an assumption, because it comes from illustrative prices [REPO-EST]. The 40% is also invented and has to be replaced with public prices, with a URL and a date.
 
-## 6. Riesgos
+## 6. Risks
 
-| Riesgo | Origen | Mitigación |
+| Risk | Source | Mitigation |
 |---|---|---|
-| Los labels del repo salen de la misma spec que los fakes, así que el pass rate prueba la maquinaria y no la calidad del modelo | [REPO] | Golden set con labels humanos (KPI de la etapa 1) |
-| n chico por slice: edge n=21 tiene intervalos amplios (bootstrap edge [−0,5238; −0,1429]) | [REPO] | Ampliar el set a ≥300 tickets; revisar los intervalos además de la decisión |
-| El costo estimado ignora tokens cacheados (estimado ≈0,100 vs. real ≈0,053 por corrida) | [REPO] | Medir el ahorro contra la factura real |
-| Un self-compare (el mismo modelo de los dos lados) no es evidencia de nada | [REPO] | Comparar solo modelos distintos; documentar el ruido de muestreo |
-| Shadow y canary reales no están construidos | [REPO] | Presupuestarlos en la etapa 2 |
-| Los equipos se saltean el gate cuando hay apuro por la fecha de corte | [SINTÉTICO] | Bloqueo en CI + calendario con aviso a 14 días |
-| Los supuestos de negocio (volumen, tarifas, incidentes) son inventados | [SINTÉTICO] | Reemplazarlos en el discovery con datos del cliente |
+| The repo's labels come from the same spec as the fakes, so the pass rate tests the machinery and not model quality | [REPO] | Golden set with human labels (stage 1 KPI) |
+| Small n per slice: edge n=21 has wide intervals (bootstrap edge [−0.5238; −0.1429]) | [REPO] | Expand the set to ≥300 tickets; review the intervals as well as the decision |
+| The estimated cost ignores cached tokens (estimate ≈0.100 vs. real ≈0.053 per run) | [REPO] | Measure the savings against the real invoice |
+| A self-compare (the same model on both sides) is not evidence of anything | [REPO] | Compare only distinct models; document sampling noise |
+| Real shadow and canary are not built | [REPO] | Budget them in stage 2 |
+| Teams skip the gate when the cutoff date creates a rush | [SYN] | CI block + calendar with 14-day notice |
+| The business assumptions (volume, rates, incidents) are invented | [SYN] | Replace them in discovery with the customer's data |

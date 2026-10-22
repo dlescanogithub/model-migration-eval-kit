@@ -2,11 +2,11 @@
 
 [![ci](https://github.com/dlescanogithub/model-migration-eval-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/dlescanogithub/model-migration-eval-kit/actions/workflows/ci.yml)
 
-**TL;DR**
+## Start here
 
-- Offline check for a fictional shop: same 63 synthetic tickets, two scripted providers, and a go/no-go, so a cheaper model cannot hide a bad slice. It does not call a paid model and it does not move production traffic.
-- Measured on 2026-10-17, package 0.2.2, Python 3.12.3: the edge slice pass rate goes from 1.0000 to 0.6667, a drop of 33.33 points on n=21 tickets (policy cap 5 points), so the decision is **NO_GO**. That NO_GO is built into `fake-new` to show the gate fires. It is not a difference between two real models.
-- One command, no API key, cost zero: `python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17 --out out/demo` (`make demo`). Walkthrough: [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md).
+- It proves an offline go/no-go on one frozen set of 63 synthetic tickets: a cheaper scripted model cannot hide a bad slice. Measured on 2026-10-17, package 0.2.2, Python 3.12.3, the edge pass rate goes from 1.0000 to 0.6667 (n=21, cap 5 points), so the decision is **NO_GO**. That NO_GO is built into `fake-new`. It does not call a paid model and it does not move production traffic.
+- One command, no API key, cost zero: `python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17 --out out/demo` (`make demo`).
+- Narrated demo: [docs/demo/](docs/demo/). Walkthrough: [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md).
 
 Offline check for a fictional shop, Casa Brisa: same 63 synthetic tickets, two scripted providers, a go/no-go. It does not call a paid model and it does not move production traffic.
 
@@ -225,6 +225,18 @@ See [SECURITY.md](SECURITY.md) and [docs/RISKS.md](docs/RISKS.md).
 | Document-extraction swap, voice-agent swap, personal assistant, newsletter | Design only |
 | Platform inventory, waves, parity, checklist gate, registry simulator, 12 invariants, forced parity regression | Implemented, synthetic files only |
 | Platform catalog write, scheduler cutover, table restore on a lakehouse | Design only |
+
+## Tests
+
+**MEASURED** 2026-10-22, Python 3.12.3. Command: `python -m pytest`. Coverage is the repo config in `pyproject.toml` (`--cov=migration_eval`, branch coverage on, fail under 80%).
+
+| | Result |
+| --- | --- |
+| Tests | 85 passed |
+| Line coverage | 91.82% (3,423 of 3,728 statements) |
+| Combined statement + branch total printed by pytest-cov | 88.62% (term display 89%) |
+
+Line coverage is the statement percentage from that run. The 88.62% figure is the combined total the same run checks against the 80% floor.
 
 ## How to reproduce
 
