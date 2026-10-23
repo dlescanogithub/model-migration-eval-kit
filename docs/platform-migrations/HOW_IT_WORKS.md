@@ -1,56 +1,56 @@
-# Cómo funciona
+# How it works
 
-Esto es para explicarlo en una entrevista, en castellano rioplatense, sin adornos. El repo corre en tu máquina sobre datos sintéticos. No se conecta a una plataforma real.
+This is a walkthrough for engineers and buyers. The repo runs on your machine on synthetic data. It does not connect to a real platform.
 
-## La analogía
+## The analogy
 
-Pensalo como una mudanza.
+Think of it as a move.
 
-Tenés una casa vieja (la plataforma de ML actual) y una casa nueva (un lakehouse con un registro de experimentos y un registro de modelos). Antes de cargar el camión hacés un inventario: qué cajas hay, quién es dueño de cada una, y qué caja no se puede mover hasta que salga otra. Ese inventario es el manifiesto.
+You have an old house (the current ML platform) and a new house (a lakehouse with an experiment registry and a model registry). Before you load the truck you take an inventory: which boxes exist, who owns each one, and which box cannot move until another one has left. That inventory is the manifest.
 
-Después armás las tandas. No subís el escritorio si las patas todavía están en el camión de atrás. Esas tandas son las olas de migración.
+Then you pack the loads. You do not load the desk if the legs are still on the truck behind. Those loads are the migration waves.
 
-Cuando la caja llega, no alcanza con decir "está". Abrís y te fijás que tenga las mismas cosas: el esquema, la cantidad de filas, y que los números no se hayan ido a cualquier lado. Eso es la paridad. Si algo no cierra, no firmás la entrega.
+When a box arrives, saying "it is here" is not enough. You open it and check that it holds the same things: the schema, the row count, and that the numbers have not drifted. That is parity. If something does not add up, you do not sign the delivery.
 
-El checklist de la puerta es el gate. Si falta la llave de rollback, no cerrás la casa vieja.
+The checklist at the door is the gate. If the rollback key is missing, you do not close the old house.
 
-## El recorrido, paso a paso
+## The path, step by step
 
-1. **Descubrís.** Diez preguntas en [DISCOVERY.md](DISCOVERY.md). Si no sabés quién es el dueño, el diseño no inventa un dueño.
-2. **Escaneás el manifiesto.** `python -m migration_eval platform-migrations scan` lee un YAML o JSON y lo normaliza. Si hay un id duplicado o una referencia colgada, no hay manifiesto válido.
-3. **Armás el grafo.** Un dataset depende de sus upstream. Un job depende de lo que lee y de los jobs que lista. Un modelo depende de sus datasets y de sus jobs. La flecha quiere decir "esto se migra antes".
-4. **Si hay un ciclo, el plan se frena.** Esos nodos quedan bloqueados. El comando `plan` sale con código 1. No te inventa un orden.
-5. **Si no hay ciclo, salen olas.** Kahn agrupa lo que ya no depende de nada. Dentro de cada ola los ids van ordenados. El camino crítico es el camino más largo según el campo `effort` (un peso relativo, no un calendario).
-6. **Medís el radio de impacto.** `blast` lista lo que está aguas abajo. Sirve para decir "si este dataset sale mal, estas otras piezas se enteran".
-7. **Comparás salidas.** `parity` mira esquema, cantidad de filas, sumas y medias, PSI y KS. El veredicto es `PASS`, `FAIL` o `NEED_HUMAN`. No junta fila contra fila por una clave. Eso queda fuera.
-8. **Simulás el registro.** `migrate` copia versiones, stages y aliases a un registro en memoria. La fuente no se toca. La segunda corrida no cambia nada. `rollback` vuelve el destino al snapshot anterior.
-9. **Pasás el gate.** Un YAML de controles. `READY` solo si lo obligatorio está en `pass` (o `waived` con aprobador), la paridad no está en `FAIL`, hay plan de rollback y no hay riesgos altos abiertos. `NEED_HUMAN` es una decisión que todavía no tomó nadie.
-10. **Escribís el reporte.** `demo` hace todo lo anterior con los fixtures de Aerolito Data (un equipo de analítica ficticio) y deja un Markdown y un HTML. También deja un trace JSONL.
+1. **Discover.** Ten questions in [DISCOVERY.md](DISCOVERY.md). If you do not know the owner, the design does not invent one.
+2. **Scan the manifest.** `python -m migration_eval platform-migrations scan` reads YAML or JSON and normalizes it. If an id is duplicated or a reference dangles, there is no valid manifest.
+3. **Build the graph.** A dataset depends on its upstream. A job depends on what it reads and on the jobs it lists. A model depends on its datasets and its jobs. The arrow means "this migrates first".
+4. **If there is a cycle, the plan stops.** Those nodes stay blocked. The `plan` command exits with code 1. It does not invent an order.
+5. **If there is no cycle, waves come out.** Kahn groups whatever no longer depends on anything. Inside each wave the ids are sorted. The critical path is the longest path by the `effort` field (a relative weight, not a calendar).
+6. **Measure the blast radius.** `blast` lists what is downstream. Use it to say "if this dataset goes wrong, these other pieces hear about it".
+7. **Compare outputs.** `parity` looks at schema, row count, sums and means, PSI, and KS. The verdict is `PASS`, `FAIL`, or `NEED_HUMAN`. It does not join row to row on a key. That stays out of scope.
+8. **Simulate the registry.** `migrate` copies versions, stages, and aliases into an in-memory registry. The source is not touched. The second run changes nothing. `rollback` returns the destination to the previous snapshot.
+9. **Pass the gate.** A YAML checklist. `READY` only if what is required is `pass` (or `waived` with an approver), parity is not `FAIL`, there is a rollback plan, and no high risks are open. `NEED_HUMAN` is a decision nobody has made yet.
+10. **Write the report.** `demo` does all of the above with the Aerolito Data fixtures (a fictional analytics team) and writes Markdown and HTML. It also writes a JSONL trace.
 
-Los evals no piden "llamó a tal función en tal orden". Miran invariantes: la fuente no cambia, el costo simulado queda bajo el tope, no hay una acción externa sin aprobación, un ciclo no se planifica como si nada, la migración es idempotente, el fixture roto no da `PASS`, el rollback restaura, y el cassette no abre la red.
+The evals do not ask "it called this function in this order". They look at invariants: the source does not change, the simulated cost stays under the cap, there is no external action without approval, a cycle is not planned as if nothing were wrong, the migration is idempotent, the broken fixture is not `PASS`, rollback restores, and the cassette does not open the network.
 
-## Glosario
+## Glossary
 
-| Palabra | Qué quiere decir acá |
+| Word | What it means here |
 | --- | --- |
-| Manifiesto | El inventario: datasets, jobs, modelos, dueños, dependencias. |
-| Ola | Un grupo de piezas que ya pueden moverse porque sus dependencias salieron antes. |
-| Camino crítico | El camino de mayor `effort` en el DAG. |
-| Blast radius | Lo que queda aguas abajo de un nodo. |
-| Paridad | La comparación entre salida vieja y salida nueva. |
-| PSI | Population Stability Index. Un número de deriva entre dos distribuciones. Lo calcula este repo con bins de ancho fijo. |
-| KS | Estadístico de Kolmogorov-Smirnov a dos muestras. También local, sin SciPy. |
-| Gate | La política en código sobre el checklist. |
-| Cassette | Un JSON con pedidos y respuestas grabadas. El replay no usa la red. |
-| Invariante | Una condición que tiene que seguir siendo cierta, pase lo que pase el orden interno. |
-| Simulado | Un número que sale de una fórmula con inputs de juguete. No es una factura. |
+| Manifest | The inventory: datasets, jobs, models, owners, dependencies. |
+| Wave | A group of pieces that can already move because their dependencies left earlier. |
+| Critical path | The path of greatest `effort` in the DAG. |
+| Blast radius | What sits downstream of a node. |
+| Parity | The comparison between the old output and the new output. |
+| PSI | Population Stability Index. A drift number between two distributions. This repo computes it with fixed-width bins. |
+| KS | Two-sample Kolmogorov-Smirnov statistic. Also local, without SciPy. |
+| Gate | The policy in code over the checklist. |
+| Cassette | A JSON file of recorded requests and responses. Replay does not use the network. |
+| Invariant | A condition that has to stay true, whatever the internal order. |
+| Simulated | A number from a formula with toy inputs. It is not an invoice. |
 
-## Límites, en serio
+## Limits, plainly
 
-- No copia datos y no habla con un catálogo, un tracker ni un registro de verdad. `MLMIG_PROVIDER=real` corta antes de abrir un socket.
-- No demuestra que un modelo predice bien. La paridad es de tablas, no de calidad de negocio.
-- El `effort` no es una estimación de proyecto. Es un peso para ordenar un camino.
-- El costo de correr en paralelo es una fórmula ilustrativa. Mirá [COST.md](COST.md).
-- Aerolito Data es ficción. Si lo usás con un cliente, cambiá nombres, umbrales y dueños. [ADAPT_TO_A_REAL_CLIENT.md](ADAPT_TO_A_REAL_CLIENT.md).
+- It does not copy data and it does not talk to a real catalog, tracker, or registry. `MLMIG_PROVIDER=real` stops before it opens a socket.
+- It does not show that a model predicts well. Parity is about tables, not business quality.
+- `effort` is not a project estimate. It is a weight used to order a path.
+- The cost of running in parallel is an illustrative formula. See [COST.md](COST.md).
+- Aerolito Data is fiction. If you use this with a client, change the names, the thresholds, and the owners. [ADAPT_TO_A_REAL_CLIENT.md](ADAPT_TO_A_REAL_CLIENT.md).
 
-Si te preguntan "¿esto ya migró una plataforma?", la respuesta es no. Muestra un playbook y unas herramientas que corren sobre fixtures.
+This has not migrated a platform. It shows a playbook and tools that run on fixtures.

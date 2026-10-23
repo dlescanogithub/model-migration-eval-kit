@@ -18,7 +18,7 @@ Ten questions to ask before anyone picks a model id. Each answer changes the har
    Here the adversarial slice cannot drop at all, and every slice is capped at 5 points. If the business only cares about complaints, tighten that category and loosen another. The cap is a config change, not a code change.
 
 6. **What saving is worth a quality risk?**
-   The bundled policy wants a savings ratio of at least 0.20 before a clean quality result can be GO. If finance wants 50%, change `min_cost_savings_ratio`. If quality risk is unacceptable at any saving, keep the slice caps where they are. The measured `fake-new` case saves about 0.79 on [EST] prices and still loses on the edge slice.
+   The bundled policy wants a savings ratio of at least 0.20 before a clean quality result can be GO. If finance wants 50%, change `min_cost_savings_ratio`. If quality risk is unacceptable at any saving, keep the slice caps where they are. The measured `fake-new` case saves 0.7843 on [EST] prices (re-measured 2026-10-23 on the English tickets) and still loses on the edge slice.
 
 7. **What is the latency budget, and is latency real?**
    Fake latency is simulated. A 1000 ms cap does not mean a real p95. If the real budget is 400 ms, the cap changes, and only a measured provider (not these fakes) can satisfy it.

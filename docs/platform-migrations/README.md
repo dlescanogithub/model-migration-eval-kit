@@ -47,7 +47,7 @@ Measured on 2026-10-17, package 0.2.0, Python 3.12.3:
 | `python -m migration_eval platform-migrations demo` | exit 0. 4 datasets, 4 jobs, 1 model, 6 waves, critical path effort 14, parity PASS, gate READY, second migrate touches 0, simulated dual-run 280. One sample: 0.107s |
 | `python -m migration_eval platform-migrations plan` on `aerolito_manifest.yaml` | exit 0, complete, not cyclic, 6 waves, critical path effort 14 |
 
-The model axis, same date and package, `python -m migration_eval eval --provider fake-old --runs 5 --today 2026-10-17`: exit 0, `pass_rate=1.0000`, `harmful=0`, `cost_per_run=0.069515`, `p95_ms=459.0`. `python -m migration_eval eval-regression --runs 5 --today 2026-10-17` exits 1 with decision NO_GO. Those model figures match the committed report. The simulated dual-run 280 is arithmetic on [EST] inputs, not a price.
+The model axis, same date and package, `python -m migration_eval eval --provider fake-old --runs 5 --today 2026-10-17`: exit 0, `pass_rate=1.0000`, `harmful=0`, `p95_ms=459.0`. Simulated `cost_per_run=0.067275` was re-measured on 2026-10-23, package 0.2.3, Python 3.12.3, after the tickets were translated to English. `python -m migration_eval eval-regression --runs 5 --today 2026-10-17` exits 1 with decision NO_GO. Those model figures match the committed report. The simulated dual-run 280 is arithmetic on [EST] inputs, not a price.
 
 ## Invariants
 
@@ -78,7 +78,7 @@ Risks: [RISKS.md](RISKS.md). Cost formula and the local timings: [COST.md](COST.
 
 | Doc | What it is |
 | --- | --- |
-| [HOW_IT_WORKS.md](HOW_IT_WORKS.md) | The same flow, in rioplatense Spanish |
+| [HOW_IT_WORKS.md](HOW_IT_WORKS.md) | The same flow, as a walkthrough |
 | [playbook/README.md](playbook/README.md) | Phases, checklists, RACI, communication |
 | [RUNBOOK.md](RUNBOOK.md) | Local operate sequence and rollback limits |
 | [RISKS.md](RISKS.md) | R1–R10, owners are roles |

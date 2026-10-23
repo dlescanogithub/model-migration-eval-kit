@@ -10,7 +10,7 @@ Fill the brackets. Do not send this with the brackets still empty, and do not pa
 
 **What we are not doing:** We are not switching traffic because of this note. A GO still needs [name] to accept it. Rollback of a real router is [owned by / not built].
 
-**Money:** [EST or a public price with URL and date]. Do not quote the simulated 0.069515 USD figure as an invoice.
+**Money:** [EST or a public price with URL and date]. Do not quote the simulated 0.067275 USD figure as an invoice.
 
 **Ask:** [read the report / accept the no-go / schedule a labelling session].
 

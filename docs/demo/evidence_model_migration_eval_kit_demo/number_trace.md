@@ -1,6 +1,8 @@
 # Number trace: model_migration_eval_kit_demo_en.mp4
 
-Every number on screen or in the narration, with its source. Asserted by script (`code/build_trace.py`) at build time against the take recording (`take.json`), the repo README (clone of main, HEAD 12c9659836ab, package 0.2.2, run on Python 3.12.15) and the report written by the run (`sources/report.md`, byte-identical to the committed `docs/example-report.md`). Spoken numbers are written in words. No live model call and no network call was made for this video; the badge says OFFLINE.
+Every number on screen or in the narration, with its source. Asserted by script (`code/build_trace.py`) at build time against the take recording (`take.json`), the repo README (clone of main, HEAD 12c9659836ab, package 0.2.2, run on Python 3.12.15) and the report written by the run (`sources/report.md`). On the day of the take that report matched the then-committed `docs/example-report.md`. Spoken numbers are written in words. No live model call and no network call was made for this video; the badge says OFFLINE.
+
+The cost figures below (0.069515, 0.014914, savings ratio 0.7855) and the live 55/63 and 56/63 were measured on the original Spanish ticket text on 2026-10-17. They were not re-run for the English tickets. The video file was not edited. Quality figures do not read ticket wording; a 2026-10-23 offline re-measure on the English tickets matched them. Simulated cost follows character length, so the current `docs/example-report.md` is that later measurement, not this snapshot.
 
 ## Scene commands (all real, offline, `lab $` prompt, no network)
 | Scene | Command shown | What it prints |
@@ -39,5 +41,6 @@ Every number on screen or in the narration, with its source. Asserted by script 
 
 ## Caveats not in the video
 - The video does not re-run the live compare. README live numbers (55/63, 56/63) are a same-model self-compare and say nothing about migrations.
-- README records measurements on Python 3.12.3; this take ran on Python 3.12.15 with package 0.2.2. The report is byte-identical to the committed example.
+- README records measurements on Python 3.12.3; this take ran on Python 3.12.15 with package 0.2.2. `sources/report.md` is the report from the take. It matched the committed example on that day. The current example report was re-measured on 2026-10-23 after the tickets were translated to English.
+- Cost rows and the live 55/63 and 56/63 in this trace were measured on the original Spanish ticket text on 2026-10-17.
 - Latency and prices are simulated / [EST]; the NO_GO is built into `fake-new` and is not a difference between two real models.

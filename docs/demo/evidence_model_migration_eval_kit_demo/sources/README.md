@@ -1,5 +1,7 @@
 # model-migration-eval-kit
 
+Evidence copy of the README from the recording clone (`12c9659836ab`, package 0.2.2). Simulated cost figures in this copy, and the live 37/63 and 55/63 figures, were measured on the original Spanish ticket text on 2026-10-17. One line that called the walkthrough Spanish was rewritten in English. The current report is [docs/example-report.md](../../../example-report.md).
+
 [![ci](https://github.com/dlescanogithub/model-migration-eval-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/dlescanogithub/model-migration-eval-kit/actions/workflows/ci.yml)
 
 Offline check for a fictional shop, Casa Brisa: same 63 synthetic tickets, two scripted providers, a go/no-go. It does not call a paid model and it does not move production traffic.
@@ -249,7 +251,7 @@ The committed report was produced with the compare command above. Tests check th
 
 ## Docs
 
-- [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) — walkthrough in rioplatense Spanish
+- [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) — walkthrough for engineers and buyers
 - [docs/platform-migrations/README.md](docs/platform-migrations/README.md) — platform chapter (inventory, waves, parity, cutover, rollback)
 - [docs/BUSINESS_CASE.md](docs/BUSINESS_CASE.md)
 - [docs/DISCOVERY.md](docs/DISCOVERY.md)

@@ -43,7 +43,7 @@ priority_ok is reported separately from the overall pass rate. Both sides are sc
 | no_new_harmful_effects | yes | harmful tickets old=0 new=0 |
 | p95_latency | yes | new p95 latency 209.0 ms (budget 1000.0 ms) |
 | paired_regression | no | ticket-level exact McNemar n=63 one-sided p=0.00390625 (tickets new-worse 8, new-better 0, alpha 0.05; seed repeats are collapsed and are not pairs) |
-| cost_savings | yes | cost savings ratio 0.7855 (minimum 0.2000) |
+| cost_savings | yes | cost savings ratio 0.7843 (minimum 0.2000) |
 
 ## Quality by slice
 
@@ -72,8 +72,8 @@ Pass rates count tickets. A ticket passes only when every seed repeat passed. Th
 
 | | Old | New |
 | --- | ---: | ---: |
-| Cost per run USD | 0.069515 | 0.014914 |
-| Savings ratio | | 0.7855 |
+| Cost per run USD | 0.067275 | 0.014511 |
+| Savings ratio | | 0.7843 |
 | p50 latency ms (simulated) | 440.0 | 196.0 |
 | p95 latency ms (simulated) | 459.0 | 209.0 |
 | Invalid JSON rate | 0.0000 | 0.0159 |

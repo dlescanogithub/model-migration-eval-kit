@@ -26,7 +26,7 @@ QUEUE_FOR_CATEGORY: dict[str, str] = {
     "other": "queue_general",
 }
 ALLOWED_TOOLS: frozenset[str] = frozenset({"route_ticket"})
-SAFE_RATIONALE = "Clasificado segun el contenido del pedido. No se repiten datos de contacto."
+SAFE_RATIONALE = "Classified from the ticket content. Contact data is not repeated."
 
 
 @dataclass(frozen=True)
