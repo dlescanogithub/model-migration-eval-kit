@@ -45,7 +45,7 @@ python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today
 
 ## Business case
 
-The simulated bill for one pass of the golden set falls from 0.069515 USD to 0.014914 USD (savings ratio 0.7855) under the [EST] price table, and the edge slice still fails the gate. A cheaper model that misses the hard tickets is not a migration. The ROI sketch, the cost of missing the illustrative cutoff, and the stakeholder note are in [docs/BUSINESS_CASE.md](docs/BUSINESS_CASE.md). Those business figures are [EST]. The only measured money-shaped numbers are the simulated costs in the report above.
+The simulated bill for one pass of the golden set falls from 0.067275 USD to 0.014511 USD (savings ratio 0.7843) under the [EST] price table, and the edge slice still fails the gate. That cost was re-measured on 2026-10-23, package 0.2.3, Python 3.12.3, after the tickets were translated to English. Token counts are about four characters per token, so the earlier 2026-10-17 dollar figures (measured on the original Spanish ticket text) are not the current report. A cheaper model that misses the hard tickets is not a migration. The ROI sketch, the cost of missing the illustrative cutoff, and the stakeholder note are in [docs/BUSINESS_CASE.md](docs/BUSINESS_CASE.md). Those business figures are [EST]. The only measured money-shaped numbers are the simulated costs in the report above.
 
 ## Architecture
 
@@ -77,7 +77,7 @@ Measured on 2026-10-17, package 0.2.0, Python 3.12.3: `platform-migrations eval`
 
 ## Results
 
-Measured 2026-10-17, package 0.2.2, Python 3.12.3, command in the Problem section, 10 seed repeats collapsed to n=63 tickets. Re-run on this package matched the committed report. Source file: [docs/example-report.md](docs/example-report.md). Contract mismatch tickets are 0 and 1. The one ticket is the scripted invalid JSON in `fake-new`. It is not a harmful ticket. On that same offline run, priority_ok is 63 on fake-old and 58 on fake-new. It is counted separately from the overall pass rate. The fakes do not read the live prompt.
+Quality measured 2026-10-17, package 0.2.2, Python 3.12.3, command in the Problem section, 10 seed repeats collapsed to n=63 tickets. Confirmed unchanged on 2026-10-23, package 0.2.3, Python 3.12.3, after the tickets were translated to English. Simulated cost in the table below is that re-measure. A fresh run matches the committed report. Source file: [docs/example-report.md](docs/example-report.md). Contract mismatch tickets are 0 and 1. The one ticket is the scripted invalid JSON in `fake-new`. It is not a harmful ticket. On that same offline run, priority_ok is 63 on fake-old and 58 on fake-new. It is counted separately from the overall pass rate. The fakes do not read the live prompt.
 
 | Slice | n | Old pass rate | New pass rate | Drop (points) | Bootstrap 95% (new - old) |
 | --- | ---: | ---: | ---: | ---: | --- |
@@ -88,7 +88,7 @@ Measured 2026-10-17, package 0.2.2, Python 3.12.3, command in the Problem sectio
 
 | | fake-old | fake-new |
 | --- | ---: | ---: |
-| Cost per run, USD, simulated, prices [EST] | 0.069515 | 0.014914 |
+| Cost per run, USD, simulated, prices [EST] | 0.067275 | 0.014511 |
 | p50 latency ms, simulated | 440.0 | 196.0 |
 | p95 latency ms, simulated | 459.0 | 209.0 |
 | Harmful tickets | 0 | 0 |
@@ -105,7 +105,7 @@ Other profiles, same command shape, `--runs 10 --today 2026-10-17`, measured in 
 
 ### Live compare
 
-The first live run was on 2026-10-17: `python -m migration_eval compare-live --runs 1`, 63 tickets, the same model on both sides. It was a self-compare, not a migration. It stays **historical**: priority passed 37/63 (58.7%) because the priority rules were not in the prompt. That is corrected.
+The first live run was on 2026-10-17: `python -m migration_eval compare-live --runs 1`, 63 tickets, the same model on both sides. It was a self-compare, not a migration. It stays **historical**: priority passed 37/63 (58.7%) because the priority rules were not in the prompt. That is corrected. Those live figures, and the later run the same day, were measured on the original Spanish ticket text. They were not re-run after the tickets were translated.
 
 The contract on that historical run was fine: 63/63 on schema, category, queue, and one `route_ticket`; injection 63/63; harmful 0/63. The 26 failures were priority only: shipping 7, payment 7, complaint 6, order_status 3, return_request 3. The prompt only said `priority: one of low, medium, high`. The grader rules were not in the prompt. This change generates them from the same table the grader uses (`PRIORITY_RULES` in `spec.py`).
 
@@ -117,10 +117,10 @@ The cost this repo computes is input tokens and output tokens times the environm
 
 | Date | Command | Sides | What was measured | n | Notes |
 | --- | --- | --- | --- | ---: | --- |
-| 2026-10-17 | `compare-live --runs 1` | same model both sides | HISTORICAL priority 37/63 (58.7%); contract 63/63; harmful 0/63 | 63 | Historical. Priority rules were absent from the prompt. Corrected. Self-compare, not a migration. Real cost US$0.053; estimate ~US$0.100 because cached tokens are ignored. |
-| 2026-10-17 | `compare-live --runs 1` | `grok-4.20-0309-non-reasoning` both sides | pass 55/63 old, 56/63 new; priority_ok 56 and 57 | 63 | Independent verification after the fix. Auto-compare, not a migration. 29/63 raw responses identical; the rest differed by model variation. Not evidence of improvement or regression. Real cost ~US$0.053 per run; repo estimate ~US$0.100 ignores cached tokens. |
+| 2026-10-17 | `compare-live --runs 1` | same model both sides | HISTORICAL priority 37/63 (58.7%); contract 63/63; harmful 0/63 | 63 | Historical. Measured on the original Spanish ticket text. Priority rules were absent from the prompt. Corrected. Self-compare, not a migration. Real cost US$0.053; estimate ~US$0.100 because cached tokens are ignored. |
+| 2026-10-17 | `compare-live --runs 1` | `grok-4.20-0309-non-reasoning` both sides | pass 55/63 old, 56/63 new; priority_ok 56 and 57 | 63 | Independent verification after the fix. Measured on the original Spanish ticket text. Auto-compare, not a migration. 29/63 raw responses identical; the rest differed by model variation. Not evidence of improvement or regression. Real cost ~US$0.053 per run; repo estimate ~US$0.100 ignores cached tokens. |
 
-The reference gate `python -m migration_eval eval --provider fake-old --runs 5 --today 2026-10-17` printed `pass_rate=1.0000`, `harmful=0`, `cost_per_run=0.069515`, `p95_ms=459.0`, `ok=true`.
+The reference gate `python -m migration_eval eval --provider fake-old --runs 5 --today 2026-10-17` printed `pass_rate=1.0000`, `harmful=0`, `cost_per_run=0.067275`, `p95_ms=459.0`, `ok=true`. That cost is the 2026-10-23 re-measure on the English tickets. Pass rate, harmful count, and p95 match the 2026-10-17 run.
 
 ## Use cases, governance and business strategy
 
@@ -174,7 +174,7 @@ Deployment Strategist conversation: start with discovery ([docs/DISCOVERY.md](do
 
 > **Synthetic example.** The customer below ("mid-size fintech") is fictional, and every business figure is a synthetic assumption, tagged **[SYN]**. Figures tagged **[REPO]** come from this repo's committed report. The value plan is *inspired by* the AWS Business Value Realization (BVR) framework. It is not an official AWS template, and I do not hold the AWS BVR Competency, which is awarded to AWS partner companies.
 
-**What the repo measures [REPO]:** 63 synthetic tickets (28 happy / 21 edge / 14 adversarial), invariant-based pass rates per slice, harmful tickets, format and tool failures, simulated p95, and simulated cost. A policy then returns GO / NO_GO / NEED_HUMAN. In the scripted demo, the simulated cost per run drops 78.55% (USD 0.069515 → 0.014914, illustrative [EST] prices). The edge slice drops 33.33 points (n=21, cap 5), so the decision is **NO_GO**. A cheaper model that misses hard tickets is not a migration.
+**What the repo measures [REPO]:** 63 synthetic tickets (28 happy / 21 edge / 14 adversarial), invariant-based pass rates per slice, harmful tickets, format and tool failures, simulated p95, and simulated cost. A policy then returns GO / NO_GO / NEED_HUMAN. In the scripted demo, the simulated cost per run drops 78.43% (USD 0.067275 → 0.014511, illustrative [EST] prices, re-measured 2026-10-23 on the English tickets). The edge slice drops 33.33 points (n=21, cap 5), so the decision is **NO_GO**. A cheaper model that misses hard tickets is not a migration.
 
 **How a team would track value [SYN]:**
 
@@ -220,7 +220,7 @@ See [SECURITY.md](SECURITY.md) and [docs/RISKS.md](docs/RISKS.md).
 | Golden set, invariants, fake providers, cassette, comparison, policy, report, ADR draft | Implemented |
 | Synthetic canary and rollback decision, deprecation calendar | Implemented |
 | Forced regression (`fake-new-degraded` must be NO_GO) | Implemented |
-| Optional chat-completions HTTP adapter (`compare-live`), off unless `LIVE_MODE=1` | Implemented. Historical self-compare 2026-10-17: priority 37/63 (58.7%), rules absent from the prompt, corrected. Later the same day, `compare-live --runs 1`, `grok-4.20-0309-non-reasoning` both sides: pass 55/63 and 56/63, priority_ok 56 and 57. Auto-compare, not evidence of a migration. Not used in CI |
+| Optional chat-completions HTTP adapter (`compare-live`), off unless `LIVE_MODE=1` | Implemented. Historical self-compare 2026-10-17, measured on the original Spanish ticket text: priority 37/63 (58.7%), rules absent from the prompt, corrected. Later the same day, `compare-live --runs 1`, `grok-4.20-0309-non-reasoning` both sides: pass 55/63 and 56/63, priority_ok 56 and 57. Auto-compare, not evidence of a migration. Not re-run. Not used in CI |
 | Live shadow, live canary, contract review | Design only |
 | Document-extraction swap, voice-agent swap, personal assistant, newsletter | Design only |
 | Platform inventory, waves, parity, checklist gate, registry simulator, 12 invariants, forced parity regression | Implemented, synthetic files only |
@@ -288,7 +288,7 @@ The committed report was produced with the compare command above. Tests check th
 ## Docs
 
 - [docs/demo/](docs/demo/) — Narrated recording of a real offline run, with number trace
-- [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) — walkthrough in rioplatense Spanish
+- [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) — walkthrough for engineers and buyers
 - [docs/platform-migrations/README.md](docs/platform-migrations/README.md) — platform chapter (inventory, waves, parity, cutover, rollback)
 - [docs/BUSINESS_CASE.md](docs/BUSINESS_CASE.md)
 - [docs/BUSINESS_VALUE.md](docs/BUSINESS_VALUE.md) — synthetic value-realization plan (fictional customer; inspired by the AWS BVR framework, not an official template)

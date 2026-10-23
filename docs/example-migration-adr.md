@@ -19,8 +19,8 @@ The unit of analysis is the ticket (n=63). Seed repeats are collapsed.
 ## Evidence
 
 - Overall pass rate: 1.0000 -> 0.8730
-- Cost per run USD: 0.069515 -> 0.014914
-- Savings ratio: 0.7855
+- Cost per run USD: 0.067275 -> 0.014511
+- Savings ratio: 0.7843
 - p95 latency ms (simulated): 459.0 -> 209.0
 - Harmful tickets: 0 -> 0
 

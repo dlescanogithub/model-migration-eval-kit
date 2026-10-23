@@ -1,10 +1,10 @@
 # Narrated offline demo
 
-[model_migration_eval_kit_demo_en.mp4](model_migration_eval_kit_demo_en.mp4) is a narrated recording of a real offline run (about 99 seconds). The narration is English. The voice is text-to-speech generated with xAI. Subtitles ship as [English](model_migration_eval_kit_demo_en.en.srt) and [Spanish](model_migration_eval_kit_demo_en.es.srt). The script that was spoken is [guion_final_usado_model_migration_eval_kit_demo_en.md](guion_final_usado_model_migration_eval_kit_demo_en.md).
+[model_migration_eval_kit_demo_en.mp4](model_migration_eval_kit_demo_en.mp4) is a narrated recording of a real offline run (about 99 seconds). The narration is English. The voice is text-to-speech generated with xAI. Subtitles are [English](model_migration_eval_kit_demo_en.en.srt). The spoken script is [model_migration_eval_kit_demo_en_script.md](model_migration_eval_kit_demo_en_script.md). The video file was not edited.
 
 The take was recorded on a fresh clone of `main` at `12c9659836ab`, package 0.2.2. It is fully offline. No live model call and no network call was made for this video. The badge on screen says OFFLINE. The model results are simulated by the fake providers. The cost figures use [EST] prices. The NO_GO is built into `fake-new` on purpose. It is not a difference between two real models.
 
-Every number on screen or in the narration comes from that run and is mapped in [evidence_model_migration_eval_kit_demo/number_trace.md](evidence_model_migration_eval_kit_demo/number_trace.md). Spoken numbers are written in words. The README records its measurements on Python 3.12.3. This take ran on Python 3.12.15 with package 0.2.2. The report written by the run is byte-identical to the committed [docs/example-report.md](../example-report.md).
+Every number on screen or in the narration comes from that run and is mapped in [evidence_model_migration_eval_kit_demo/number_trace.md](evidence_model_migration_eval_kit_demo/number_trace.md). Spoken numbers are written in words. The README records its measurements on Python 3.12.3. This take ran on Python 3.12.15 with package 0.2.2. The report written by the run is kept at [evidence_model_migration_eval_kit_demo/sources/report.md](evidence_model_migration_eval_kit_demo/sources/report.md). On the day of the take it matched the then-committed example report. Simulated cost in that snapshot was measured on the original Spanish ticket text on 2026-10-17. The current [docs/example-report.md](../example-report.md) was re-measured on 2026-10-23, package 0.2.3, after the tickets were translated to English. Quality rows match the recording. Simulated cost follows character length, so the current report is the later measurement. The live 55/63 and 56/63 quoted in the narration were also measured on that Spanish text and were not re-run.
 
 ## Commands
 
@@ -54,7 +54,7 @@ sed -n '106p;108p' README.md | fold -s -w 126
 
 ## Live self-compare quoted in the video
 
-The narration says fifty-five and fifty-six of sixty-three. That is pass 55/63 on the old side and 56/63 on the new side, the same model on both sides. It is quoted from the README in scene F. It was not re-run for this video. It is noise, not evidence, and it says nothing about a migration.
+The narration says fifty-five and fifty-six of sixty-three. That is pass 55/63 on the old side and 56/63 on the new side, the same model on both sides. It is quoted from the README in scene F. It was measured on the original Spanish ticket text on 2026-10-17 and was not re-run for this video. It is noise, not evidence, and it says nothing about a migration.
 
 ## Spend
 

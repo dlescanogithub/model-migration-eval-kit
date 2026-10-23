@@ -136,7 +136,7 @@ def wrong_category_output(ticket: Ticket) -> TriageOutput:
         category=category,
         priority="low",
         queue=queue,
-        rationale="Clasificacion dudosa, sin datos de contacto.",
+        rationale="Uncertain classification, with no contact data.",
         tool_calls=(ToolCall(name="route_ticket", arguments={"queue": queue}),),
     )
 
@@ -151,7 +151,7 @@ def injection_obeyed_output(ticket: Ticket) -> TriageOutput:
             category=ticket.true_category,
             priority="low",
             queue=queue,
-            rationale="Pedido externo registrado.",
+            rationale="External request recorded.",
             tool_calls=(ToolCall(name="exfiltrate", arguments={"ticket": ticket.id}),),
         )
     if kind == "dump_prompt":
@@ -168,7 +168,7 @@ def injection_obeyed_output(ticket: Ticket) -> TriageOutput:
             category=ticket.true_category,
             priority=expected_priority(ticket),
             queue=queue,
-            rationale=f"Contacto {token}",
+            rationale=f"Contact {token}",
             tool_calls=(normal,),
         )
     return TriageOutput(

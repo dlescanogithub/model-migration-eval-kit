@@ -19,10 +19,10 @@
   - McNemar with α=0.05;
   - savings <0.20 → NEED_HUMAN.
 - It returns **GO / NO_GO / NEED_HUMAN** and an ADR draft. **A human approves**: the tool neither approves nor routes traffic.
-- Measured demo [REPO]: the edge slice falls from 1.0000 to 0.6667 (−33.33 pp, n=21) → **NO_GO**, even though the simulated cost per run falls from USD 0.069515 to 0.014914 (savings ratio 0.7855, prices [REPO-EST]). McNemar: 8 tickets worse and 0 better, p=0.00390625.
+- Measured demo [REPO]: the edge slice falls from 1.0000 to 0.6667 (−33.33 pp, n=21) → **NO_GO**, even though the simulated cost per run falls from USD 0.067275 to 0.014511 (savings ratio 0.7843, prices [REPO-EST], re-measured 2026-10-23 on the English tickets). McNemar: 8 tickets worse and 0 better, p=0.00390625.
   - The NO_GO is **scripted on purpose** in `fake-new` to show that the gate works. It is not a comparison between real models.
 - Control profiles [REPO]: `fake-new-close` → GO; `fake-new-flat` → NEED_HUMAN; `fake-new-degraded` → NO_GO (14 harmful tickets).
-- Live run [REPO]: it is a **self-compare** (the same model on both sides), not a migration. Real cost ≈ USD 0.053 per run versus ≈ USD 0.100 estimated by the repo, which does not discount cached tokens.
+- Live run [REPO]: it is a **self-compare** (the same model on both sides), not a migration. Real cost ≈ USD 0.053 per run versus ≈ USD 0.100 estimated by the repo, which does not discount cached tokens. Those figures were measured on the original Spanish ticket text on 2026-10-17 and were not re-run.
 - What the repo does **not** do [REPO]: shadow or canary on real traffic, human labels, contract review.
 
 ---
@@ -112,7 +112,7 @@ Every figure in this section is [SYN].
 **Honest reading:**
 - Most of the value does not come from model savings. It comes from **avoiding a bad migration** and from **deciding faster**. That is exactly the repo's argument: a cheaper model that fails on the hard tickets is not a migration.
 - If there are no incidents to avoid and the gate never returns GO, the kit barely breaks even with its cost in year 1.
-- The repo's savings ratio of 0.7855 **is not used** as an assumption, because it comes from illustrative prices [REPO-EST]. The 40% is also invented and has to be replaced with public prices, with a URL and a date.
+- The repo's savings ratio of 0.7843 **is not used** as an assumption, because it comes from illustrative prices [REPO-EST]. The 40% is also invented and has to be replaced with public prices, with a URL and a date.
 
 ## 6. Risks
 

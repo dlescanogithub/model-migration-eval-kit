@@ -14,7 +14,7 @@ from migration_eval.providers.fake import PROFILES
 from migration_eval.spec import priority_rules_missing_from
 from migration_eval.stats import bootstrap_rate_delta, mcnemar_regression_pvalue, percentile
 
-CONTRACT_SANITY_WARNING = "posible desajuste prompt/grader, no es calidad del modelo"
+CONTRACT_SANITY_WARNING = "possible prompt/grader mismatch, not model quality"
 _FAKE_PRIORITY_NOTE = (
     "priority_ok is reported separately from the overall pass rate. "
     "Both sides are scripted fakes and do not read the live prompt. "

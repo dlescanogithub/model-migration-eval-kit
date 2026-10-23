@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The repository is in English. Walkthroughs, the Casa Brisa golden set, injection text, rationales, the contract-mismatch warning, and the demo script and subtitles are English. The Spanish subtitle file was removed; the English subtitle file remains. The video file was not edited. Interview framing was removed from the walkthroughs. They are written for engineers and buyers.
+- Offline quality figures were confirmed unchanged on 2026-10-23, package 0.2.3, Python 3.12.3, after the tickets were translated to English. Simulated cost was re-measured the same day because token counts follow character length: fake-old 0.067275 USD, fake-new 0.014511 USD, savings ratio 0.7843, prices [EST]. The 2026-10-17 dollar figures in the narrated demo stay labeled as measured on the original Spanish ticket text.
+- Live compare figures (priority 37/63, pass 55/63 and 56/63, real cost about US$0.053) stay the 2026-10-17 measurements on the original Spanish ticket text. They were not re-run.
+
 ## 0.2.3 - 2026-10-22
 
 - Business value section in the README, and the synthetic value plan in [docs/BUSINESS_VALUE.md](docs/BUSINESS_VALUE.md). That plan is in English. Invented business assumptions are tagged **[SYN]**.
@@ -14,16 +18,16 @@
 - The live prompt's priority lines are generated from `PRIORITY_RULES`, the same table `expected_priority` walks. A test checks that every rule line is in the prompt and that the grader uses that table.
 - Reports count `priority_ok` separately from the overall pass rate. When a dimension depends on rules that are not in the prompt, the report says so and withholds the blended pass rate. That rate is not a live quality number.
 - A cassette of representative raw responses checks the live contract: schema, category, queue, and one `route_ticket` can pass while priority fails, and that split is not harmful.
-- Documented the 2026-10-17 self-compare: priority 37/63 (58.7%) because the rules were missing, contract 63/63, harmful 0/63. That priority figure is historical. The cost estimate ignores cached tokens (real US$0.053 versus an estimate of about US$0.100).
-- A later `compare-live --runs 1` the same day, `grok-4.20-0309-non-reasoning` on both sides, measured pass 55/63 old and 56/63 new, and priority_ok 56 and 57. It is a self-compare. 29/63 raw responses were identical. The gap is not evidence of improvement or regression. Real cost about US$0.053 per run; the repo estimate of about US$0.100 ignores cached tokens.
+- Documented the 2026-10-17 self-compare, measured on the original Spanish ticket text: priority 37/63 (58.7%) because the rules were missing, contract 63/63, harmful 0/63. That priority figure is historical. The cost estimate ignores cached tokens (real US$0.053 versus an estimate of about US$0.100).
+- A later `compare-live --runs 1` the same day, `grok-4.20-0309-non-reasoning` on both sides, measured on that same Spanish text, pass 55/63 old and 56/63 new, and priority_ok 56 and 57. It is a self-compare. 29/63 raw responses were identical. The gap is not evidence of improvement or regression. Real cost about US$0.053 per run; the repo estimate of about US$0.100 ignores cached tokens.
 
 ## 0.2.1 - 2026-10-17
 
 - Live HTTP timeouts and connection errors retry with a capped backoff and jitter. A spent attempt counts against `MAX_LIVE_SPEND_USD`. When retries are exhausted the command exits 2 with a clear error and a partial report, without a traceback.
 - The live prompt includes the category-to-queue table the grader uses, requires exactly one `route_ticket`, and shows the JSON schema plus an example.
 - Contract mismatch (invalid JSON, invented queue, missing or wrong tool call) is reported apart from harmful effects (contact-token echo, obeyed injection, dangerous action). An invented queue is not harmful.
-- A live compare whose pass rate is about zero on both sides because of contract mismatch warns: posible desajuste prompt/grader, no es calidad del modelo.
-- Documented: the cost formula ignores cached tokens and overestimates, and the same model on both sides of `compare-live` is a self-compare, not a migration. Live status stays "implementado, verificación live pendiente".
+- A live compare whose pass rate is about zero on both sides because of contract mismatch warns: possible prompt/grader mismatch, not model quality.
+- Documented: the cost formula ignores cached tokens and overestimates, and the same model on both sides of `compare-live` is a self-compare, not a migration. Live status stays "implemented, live verification still pending".
 
 ## 0.2.0 - 2026-10-17
 

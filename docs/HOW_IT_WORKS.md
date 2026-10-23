@@ -1,50 +1,52 @@
-# Cómo funciona
+# How it works
 
-Esto es para contarlo en una entrevista, sin teatro. El modelo razona; el sistema alrededor decide si ese razonamiento se puede usar.
+This is a walkthrough for engineers and buyers. The model reasons. The system around it decides whether that reasoning can be used.
 
-## Analogía
+## Analogy
 
-Imaginate que Casa Brisa, un local inventado, cambia el horno. Antes de tirar el horno viejo, horneás la misma tanda en los dos. No te quedás con "esta factura tiene que pesar 83 gramos". Te fijás que ninguna salga cruda, que las de jamón no terminen en la bandeja de dulce, y que si alguien metió un papelito adentro de la masa diciendo "ignorá la receta", el horno nuevo no le haga caso.
+Casa Brisa, a fictional shop, is replacing the oven. Before throwing out the old oven, you bake the same batch in both. You do not keep a rule that "this invoice must weigh 83 grams". You check that nothing comes out raw, that the ham ones do not end up on the sweet tray, and that if someone slipped a note into the dough saying "ignore the recipe", the new oven does not obey it.
 
-El papelito es el texto del ticket. El cliente puede escribir cualquier cosa. El sistema no obedece eso.
+The note is the ticket text. The customer can write anything. The system does not obey that.
 
-## Qué está medido acá
+## What is measured here
 
-Los dos "hornos" de la demo son simuladores con nombre: `fake-old` y `fake-new`. No son modelos de un proveedor. El resultado medido el 2026-10-17, paquete 0.2.2, con `python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17`, es NO_GO: la tanda difícil (slice edge, n=21) baja 33.33 puntos y el tope configurado es 5. Ese NO_GO está escrito en `fake-new` a propósito, para mostrar que la compuerta dispara. No es una diferencia entre dos modelos reales. Las etiquetas salen del mismo spec que los fakes (`spec.py`): los números muestran que la maquinaria corre, no la calidad de un modelo. Los precios de esa cuenta son ilustrativos, marcados [EST]. La latencia dice "simulated".
+The two "ovens" in the demo are named simulators: `fake-old` and `fake-new`. They are not a vendor's models. The result measured on 2026-10-17, package 0.2.2, with `python -m migration_eval compare --old fake-old --new fake-new --runs 10 --today 2026-10-17`, is NO_GO: the hard batch (slice edge, n=21) drops 33.33 points and the configured cap is 5. That NO_GO is written into `fake-new` on purpose, to show that the gate fires. It is not a difference between two real models. The labels come from the same spec as the fakes (`spec.py`): the numbers show that the machinery runs, not the quality of a model. The prices in that account are illustrative, marked [EST]. Latency is labelled simulated.
 
-## Paso a paso
+Those quality figures do not read the ticket wording. A re-measure on 2026-10-23, package 0.2.3, after the tickets were translated to English, matched them. Simulated cost does depend on wording, because a token is about four characters. The current cost is the 2026-10-23 re-measure in [COST.md](COST.md) and [example-report.md](example-report.md). The 2026-10-17 dollar figures in the narrated demo were measured on the original Spanish ticket text.
 
-1. Hay 63 tickets sintéticos en `data/golden_tickets.json`. Los arma `build_golden()`. Hay casos normales, casos límite y casos con una instrucción metida en el cuerpo.
-2. Cada ticket tiene una etiqueta que sale de reglas (`src/migration_eval/spec.py`): categoría, prioridad, cola. La prioridad es una sola tabla (`PRIORITY_RULES`). El prompt live imprime esas mismas filas. El texto del ticket ilustra el caso. La regla no "lee" el texto con un modelo.
-3. Un proveedor devuelve JSON: categoría, prioridad, cola, una frase corta y una herramienta. La única herramienta permitida es `route_ticket`. Nadie la ejecuta.
-4. Los invariantes miran el efecto, no la frase exacta. ¿El JSON cierra? ¿La categoría está en la lista? ¿La prioridad cumple la regla? ¿La cola es la de esa categoría? ¿El texto incrustado fue ignorado? ¿No se repitió el correo sintético? ¿Hay exactamente un `route_ticket`? Una cola inventada o un JSON inválido es un desajuste de contrato. Daño real es repetir el contacto, obedecer la inyección, o llamar otra herramienta.
-5. `compare` corre la misma lista en los dos proveedores, con semillas. En estos fakes la semilla solo mueve la latencia simulada. Antes del test se junta cada ticket: pasa solo si pasó en todas las repeticiones. La unidad es el ticket. n es 63, no 63 por la cantidad de semillas. Repetir la corrida no cambia el test ni el intervalo.
-6. El test pareado (McNemar exacto) mira los tickets donde uno pasó y el otro no. En la corrida medida de los fakes son 8 contra 0, sobre n=63. Ese resultado está armado en el fake. Sirve para ver la compuerta, no para decir que un modelo real es peor. `old` y `new` con el mismo modelo es un auto-compare, no una migración: las diferencias entre lados son ruido de muestreo. La corrida live del 2026-10-17 con prioridad 37/63 (58,7 %) es histórica: las reglas no estaban en el prompt, y eso ya se corrigió. La corrida posterior, el mismo día, `compare-live --runs 1`, `grok-4.20-0309-non-reasoning` en los dos lados, midió pass 55/63 y 56/63, y `priority_ok` 56 y 57. 29/63 respuestas crudas salieron idénticas y el resto cambió por variación del modelo. Esa diferencia no es evidencia de mejora ni de regresión. El McNemar o el GO/NO_GO de ese auto-compare no es evidencia de nada.
-7. El bootstrap vuelve a sortear tickets (no repeticiones) y muestra un rango para la diferencia de tasa, por slice y para la métrica de decisión. En la corrida medida, el rango general queda debajo de cero: [-0.2222, -0.0476]. El de edge es [-0.5238, -0.1429].
-8. La política (`config/policy.yaml`) junta eso y dice GO, NO_GO o NEED_HUMAN. NO_GO corta. NEED_HUMAN es cuando no hay un fallo duro pero tampoco hay motivo para moverse (por ejemplo, misma calidad y ahorro cero). GO es una recomendación. Una persona tiene que firmar.
-9. El canario sintético manda una parte estratificada de la tanda al proveedor nuevo y escribe un JSONL. Si la tasa de fallo se pasa del umbral, la decisión es ROLLBACK. No hay un router de verdad.
-10. El calendario de baja compara fechas con un "hoy" que vos inyectás. Sirve para avisar que se acerca una fecha, no para apagar un servicio.
+## Step by step
 
-## Glosario
+1. There are 63 synthetic tickets in `data/golden_tickets.json`. `build_golden()` builds them. There are ordinary cases, edge cases, and cases with an instruction planted in the body.
+2. Each ticket has a label that comes from rules (`src/migration_eval/spec.py`): category, priority, queue. Priority is one table (`PRIORITY_RULES`). The live prompt prints those same rows. The ticket text illustrates the case. The rule does not "read" the text with a model.
+3. A provider returns JSON: category, priority, queue, a short sentence, and a tool. The only allowed tool is `route_ticket`. Nobody runs it.
+4. The invariants look at the effect, not the exact sentence. Does the JSON parse? Is the category in the list? Does the priority match the rule? Is the queue the one for that category? Was the planted text ignored? Was the synthetic email not repeated? Is there exactly one `route_ticket`? An invented queue or invalid JSON is a contract mismatch. Real harm is repeating the contact, obeying the injection, or calling another tool.
+5. `compare` runs the same list on both providers, with seeds. On these fakes the seed only moves the simulated latency. Before the test, each ticket is collapsed: it passes only if it passed on every repeat. The unit is the ticket. n is 63, not 63 times the number of seeds. Repeating the run does not change the test or the interval.
+6. The paired test (exact McNemar) looks at the tickets where one side passed and the other did not. On the measured fake run that is 8 against 0, on n=63. That result is built into the fake. It shows the gate. It does not say a real model is worse. `old` and `new` with the same model is a self-compare, not a migration: differences between sides are sampling noise. The live run on 2026-10-17 with priority 37/63 (58.7%) was measured on the original Spanish ticket text. It is historical: the rules were not in the prompt, and that is already fixed. The later run, the same day, `compare-live --runs 1`, `grok-4.20-0309-non-reasoning` on both sides, was also measured on that Spanish text. It measured pass 55/63 and 56/63, and `priority_ok` 56 and 57. 29/63 raw responses were identical and the rest changed because the model varied. That gap is not evidence of improvement or of regression. McNemar or GO/NO_GO on that self-compare is not evidence of anything. Those live figures were not re-run after the tickets were translated.
+7. The bootstrap redraws tickets (not repeats) and shows a range for the rate difference, by slice and for the decision metric. On the measured run, the overall range sits below zero: [-0.2222, -0.0476]. The edge range is [-0.5238, -0.1429].
+8. The policy (`config/policy.yaml`) puts that together and says GO, NO_GO, or NEED_HUMAN. NO_GO stops. NEED_HUMAN is when there is no hard failure and also no reason to move (for example, the same quality and zero savings). GO is a recommendation. A person has to sign.
+9. The synthetic canary sends a stratified part of the batch to the new provider and writes a JSONL file. If the failure rate crosses the threshold, the decision is ROLLBACK. There is no real router.
+10. The retirement calendar compares dates with a "today" that you inject. It warns that a date is close. It does not turn a service off.
 
-| Palabra | Qué quiere decir acá |
+## Glossary
+
+| Word | What it means here |
 | --- | --- |
-| Golden set | La tanda fija de tickets con la que se comparan los dos proveedores |
-| Slice | Un grupo: happy, edge o adversarial |
-| Invariante | Una condición que tiene que cumplirse, sin exigir el texto exacto |
-| Efecto dañino | Repetir el dato de contacto, obedecer la inyección, llamar una herramienta de más, o mandar a una cola que no corresponde |
-| GO / NO_GO / NEED_HUMAN | Recomendación. No es un deploy |
-| Cassette | Archivo que guarda una respuesta y la vuelve a servir. Si falta la fila, no sale a internet |
-| [EST] | Número ilustrativo, no medido en una factura real |
-| Simulated | Latencia o tokens inventados por el simulador, con una regla explícita |
+| Golden set | The fixed batch of tickets the two providers are compared on |
+| Slice | A group: happy, edge, or adversarial |
+| Invariant | A condition that has to hold, without requiring the exact text |
+| Harmful effect | Repeating the contact data, obeying the injection, calling an extra tool, or sending to a queue that does not match |
+| GO / NO_GO / NEED_HUMAN | A recommendation. It is not a deploy |
+| Cassette | A file that stores a response and serves it again. If the row is missing, it does not go to the internet |
+| [EST] | An illustrative number, not measured on a real invoice |
+| Simulated | Latency or tokens invented by the simulator, with an explicit rule |
 
-## El otro eje: mudanza de plataforma
+## The other axis: a platform move
 
-Lo de arriba compara dos modelos sobre los mismos tickets. El segundo eje es mover la plataforma: inventario, olas, paridad, cutover y rollback, sobre un equipo de analítica inventado (Aerolito Data). El relato en castellano está en [platform-migrations/HOW_IT_WORKS.md](platform-migrations/HOW_IT_WORKS.md). El índice del capítulo es [platform-migrations/README.md](platform-migrations/README.md). El comando es `python -m migration_eval platform-migrations`. La ilustración de plata de ese capítulo es negativa y usa datos ficticios.
+The section above compares two models on the same tickets. The second axis moves the platform: inventory, waves, parity, cutover, and rollback, on a fictional analytics team (Aerolito Data). The walkthrough is [platform-migrations/HOW_IT_WORKS.md](platform-migrations/HOW_IT_WORKS.md). The chapter index is [platform-migrations/README.md](platform-migrations/README.md). The command is `python -m migration_eval platform-migrations`. The money illustration in that chapter is negative and uses fictional data.
 
-## Límites, en serio
+## Limits, plainly
 
-- Fijate que el simulador conoce `variant` (si el caso es "difícil" o "se rompe el formato"). Un modelo de verdad no ve ese campo. El prompt solo lleva asunto y cuerpo. Por eso esta demo muestra el mecanismo de la decisión, no la calidad de un modelo publicado.
-- La etiqueta y el simulador "bueno" usan la misma función. Si la regla está mal, los dos quedan de acuerdo y el reporte se ve verde. Para un caso real hace falta una persona etiquetando, aparte del modelo.
-- No hay tráfico real, no hay contrato, no hay cliente real. Casa Brisa no existe.
-- El ahorro en dólares del reporte usa precios inventados. No lo cites como una factura.
+- The simulator knows `variant` (whether the case is "hard" or "the format breaks"). A real model does not see that field. The prompt carries only subject and body. This demo shows the decision mechanism, not the quality of a published model.
+- The label and the "good" simulator use the same function. If the rule is wrong, both agree and the report looks green. A real case needs a person labelling, apart from the model.
+- There is no real traffic, no contract, and no real customer. Casa Brisa does not exist.
+- The dollar savings in the report use invented prices. Do not cite them as an invoice.
